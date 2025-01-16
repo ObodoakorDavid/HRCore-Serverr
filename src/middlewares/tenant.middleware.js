@@ -1,0 +1,18 @@
+import mongoose from "mongoose";
+import ApiError from "../utils/apiError.js";
+import tenantService from "../v1/services/tenant.service.js";
+import asyncWrapper from "./asyncWrapper.js";
+
+const tenantMiddleware = asyncWrapper(async (req, res, next) => {
+  const tenantId = req.headers["x-tenant-id"];
+
+  if (!tenantId || !mongoose.isValidObjectId(tenantId)) {
+    throw ApiError.badRequest("Tenant ID is required");
+  }
+
+  await tenantService.getTenant(tenantId);
+  req.tenant = { tenantId };
+  next();
+});
+
+export { tenantMiddleware };
