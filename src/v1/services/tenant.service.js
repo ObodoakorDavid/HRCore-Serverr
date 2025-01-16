@@ -147,20 +147,17 @@ async function forgotPassword(email) {
 
   const resetUrl = `${process.env.FRONTEND_URL}/tenant/reset-password?token=${token}`;
 
-  // Send email with the password reset link
-  const mailOptions = {
-    from: process.env.ADMIN_EMAIL,
-    to: email,
-    subject: "Password Reset Request",
-    text: `Click on the following link to reset your password: ${resetUrl}`,
-    html: `
-      <p>Click on the following link to reset your password:</p>
-      <a href="${resetUrl}">Reset Password</a>
-    `,
+  const options = {
+    email: tenant.email,
+    resetUrl,
+    name: tenant.name,
+    color: tenant.color,
+    tenantName: tenant.name,
+    logo: tenant.logo,
   };
 
   try {
-    await emailUtils.sendEmail(mailOptions);
+    await emailUtils.sendForgotPasswordEmail(options);
     return ApiSuccess.ok("Password reset email sent");
   } catch (error) {
     throw ApiError.internalServerError("Error sending reset email");

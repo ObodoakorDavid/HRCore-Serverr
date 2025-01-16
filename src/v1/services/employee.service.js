@@ -269,6 +269,7 @@ async function employeeBulkInvite(file, tenantId) {
       tenantName: tenant.name,
       inviteUrl,
       plainPassword,
+      logo: tenant.logo,
     };
 
     try {
@@ -288,7 +289,7 @@ async function employeeBulkInvite(file, tenantId) {
 
 // Forgot Password
 async function forgotPassword(email) {
-  const employee = await Employee.findOne({ email });
+  const employee = await Employee.findOne({ email }).populate("tenantId");
   if (!employee) {
     throw ApiError.badRequest("No user with this email");
   }
@@ -303,19 +304,17 @@ async function forgotPassword(email) {
 
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-  const mailOptions = {
-    from: process.env.ADMIN_EMAIL,
-    to: email,
-    subject: "Password Reset Request",
-    text: `Click on the following link to reset your password: ${resetUrl}`,
-    html: `
-      <p>Click on the following link to reset your password:</p>
-      <a href="${resetUrl}">Reset Password</a>
-    `,
+  const options = {
+    email,
+    resetUrl,
+    name: employee.name ? employee.name : "User",
+    color: employee.tenantId.color,
+    tenantName: employee.tenantId.name,
+    logo: employee.tenantId.logo,
   };
 
   try {
-    await emailUtils.sendEmail(mailOptions);
+    await emailUtils.sendForgotPasswordEmail(options);
     return ApiSuccess.ok("Password reset email sent");
   } catch (error) {
     throw ApiError.internalServerError("Error sending reset email");

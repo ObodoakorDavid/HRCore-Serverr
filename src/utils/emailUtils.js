@@ -7,50 +7,27 @@ import createTransporter from "../lib/emailTransporter.js";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
-// Get the directory name from import.meta.url
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const templatesDir = path.join(__dirname, "..", "templates");
 
-// Define emailTemplatePath and transporter as shared values
-const otpEmailTemplatePath = path.join(
-  __dirname,
-  "..",
-  "templates",
-  "OTPTemplate.html"
-);
-const inviteEmailTemplatePath = path.join(
-  __dirname,
-  "..",
-  "templates",
-  "InviteTemplate.html"
-);
-const tenantEmailTemplatePath = path.join(
-  __dirname,
-  "..",
-  "templates",
-  "TenantTemplate.html"
+const templatePaths = {
+  otp: path.join(templatesDir, "OTPTemplate.html"),
+  employeeInviteEmail: path.join(templatesDir, "InviteTemplate.html"),
+  tenantWelcomeEmail: path.join(templatesDir, "TenantTemplate.html"),
+  forgotPasswordEmail: path.join(templatesDir, "ForgotPasswordTemplate.html"),
+};
+
+const templates = Object.fromEntries(
+  Object.entries(templatePaths).map(([key, filePath]) => [
+    key,
+    handlebars.compile(fs.readFileSync(filePath, "utf8")),
+  ])
 );
 
 const transporter = createTransporter();
-
-// Read and compile templates
-const otpEmailTemplateSource = fs.readFileSync(otpEmailTemplatePath, "utf8");
-const inviteEmailTemplateSource = fs.readFileSync(
-  inviteEmailTemplatePath,
-  "utf8"
-);
-const tenantEmailTemplateSource = fs.readFileSync(
-  tenantEmailTemplatePath,
-  "utf8"
-);
-
-const otpTemplate = handlebars.compile(otpEmailTemplateSource);
-const inviteTemplate = handlebars.compile(inviteEmailTemplateSource);
-const tenantTemplate = handlebars.compile(tenantEmailTemplateSource);
-
 const defaultSender = process.env.ADMIN_EMAIL;
 
-// Function to send email
 async function sendEmail({ from, to, subject, text, html }) {
   try {
     const mailOptions = {
@@ -70,7 +47,6 @@ async function sendEmail({ from, to, subject, text, html }) {
   }
 }
 
-// Function to send OTP
 async function sendOTP(email, userName) {
   try {
     await OTP.findOneAndDelete({ email });
@@ -80,27 +56,23 @@ async function sendOTP(email, userName) {
     const subject = "OTP Request";
     const date = new Date().toLocaleString();
     const emailText = `Hello ${userName},\n\nYour OTP is: ${otp}`;
-    const html = otpTemplate({ userName, otp, date });
+    const html = templates.otp({ userName, otp, date });
 
-    return sendEmail({
-      to: email,
-      subject,
-      text: emailText,
-      html,
-    });
+    return sendEmail({ to: email, subject, text: emailText, html });
   } catch (error) {
     console.error("Error sending OTP:", error);
     throw error;
   }
 }
 
-// Function to send Invitation email
 async function sendInvitation({
   email,
   userName,
   tenantName,
   inviteUrl,
   plainPassword,
+  logo,
+  date = new Date(),
 }) {
   try {
     const subject = `Invitation to Join ${tenantName} on HRCore`;
@@ -112,26 +84,22 @@ async function sendInvitation({
       ${inviteUrl}
     `;
 
-    const html = inviteTemplate({
+    const html = templates.employeeInviteEmail({
       userName,
       tenantName,
       plainPassword,
       inviteUrl,
+      logo,
+      date,
     });
 
-    return sendEmail({
-      to: email,
-      subject,
-      text: emailText,
-      html,
-    });
+    return sendEmail({ to: email, subject, text: emailText, html });
   } catch (error) {
-    console.error("Error sending Invitation email:", error);
+    console.error("Error sending invitation email:", error);
     throw error;
   }
 }
 
-// Function to send Tenant Welcome email
 async function sendWelcomeEmailToTenant({
   tenantId,
   email,
@@ -149,24 +117,61 @@ async function sendWelcomeEmailToTenant({
       ${loginUrl}
     `;
 
-    const html = tenantTemplate({ plainPassword, loginUrl, tenantId });
-
-    return sendEmail({
-      to: email,
-      subject,
-      text: emailText,
-      html,
+    const html = templates.tenantWelcomeEmail({
+      plainPassword,
+      loginUrl,
+      tenantId,
     });
+
+    return sendEmail({ to: email, subject, text: emailText, html });
   } catch (error) {
-    console.error("Error sending Tenant email:", error);
+    console.error("Error sending tenant email:", error);
     throw error;
   }
 }
 
-// Export functions as an object
+async function sendForgotPasswordEmail({
+  email,
+  resetUrl,
+  name,
+  color = "#000000",
+  tenantName,
+  logo,
+  date = new Date().getFullYear(),
+}) {
+  try {
+    const subject = "Reset Your Password";
+
+    const emailText = `
+      Hello ${name},\n\n
+      You recently requested to reset your password. Please click the link below to proceed:\n
+      ${resetUrl}\n\n
+      If you did not request this action, you can safely ignore this email.
+    `;
+
+    const html = templates.forgotPasswordEmail({
+      resetUrl,
+      name,
+      color,
+      tenantName,
+      logo,
+      date,
+    });
+
+    console.log(html);
+
+    return sendEmail({ to: email, subject, text: emailText, html });
+  } catch (error) {
+    console.error("Error sending forgot password email:", error);
+    throw error;
+  }
+}
+
+// Export functions
 export default {
   sendEmail,
   sendOTP,
   sendInvitation,
-  sendWelcomeEmailToTenant, // Exporting the sendEmailToTenant function
+  sendWelcomeEmailToTenant,
+  sendForgotPasswordEmail,
 };
