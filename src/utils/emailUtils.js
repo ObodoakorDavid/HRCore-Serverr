@@ -158,7 +158,7 @@ async function sendForgotPasswordEmail({
       date,
     });
 
-    console.log(html);
+    // console.log(html);
 
     return sendEmail({ to: email, subject, text: emailText, html });
   } catch (error) {
