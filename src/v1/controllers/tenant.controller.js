@@ -26,7 +26,8 @@ export const getTenantDetails = asyncWrapper(async (req, res, next) => {
 });
 
 export const getAllInviteLinks = asyncWrapper(async (req, res, next) => {
-  const result = await tenantService.getLinks(req.query);
+  const { tenantId } = req.tenant;
+  const result = await tenantService.getLinks(req.query, tenantId);
   res.status(200).json(result);
 });
 

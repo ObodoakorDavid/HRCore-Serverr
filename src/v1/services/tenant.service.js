@@ -103,10 +103,10 @@ async function getTenantDetails(tenantId) {
   return ApiSuccess.created("Tenant retrieved successfully", { tenant });
 }
 
-async function getLinks(query = {}) {
+async function getLinks(query = {}, tenantId) {
   const { page = 1, limit = 10, search, sort = { createdAt: -1 } } = query;
 
-  const filter = {};
+  const filter = { tenantId };
   if (search) {
     filter.$or = [
       { tenantId: { $regex: search, $options: "i" } },

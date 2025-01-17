@@ -4,7 +4,8 @@ const { Schema } = mongoose;
 const linkSchema = new Schema(
   {
     tenantId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
       required: true,
     },
     token: {
