@@ -172,9 +172,11 @@ async function acceptInvite(token, tenantId) {
 }
 
 async function getEmployeeDetails(employeeId, tenantId) {
-  console.log({ employeeId, tenantId });
+  const employee = await Employee.findOne({
+    _id: employeeId,
+    tenantId,
+  }).populate("tenantId");
 
-  const employee = await Employee.findOne({ _id: employeeId, tenantId });
   if (!employee) {
     throw ApiError.notFound("Employee not found");
   }

@@ -67,6 +67,7 @@ router
   .route("/bulk-invite")
   .post(
     tenantMiddleware,
+    isAuth,
     isTenantAdmin,
     bulkEmployeeInviteValidator,
     employeeBulkInvite
