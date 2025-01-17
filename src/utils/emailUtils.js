@@ -14,7 +14,7 @@ const templatesDir = path.join(__dirname, "..", "templates");
 const templatePaths = {
   otp: path.join(templatesDir, "OTPTemplate.html"),
   employeeInviteEmail: path.join(templatesDir, "InviteTemplate.html"),
-  tenantWelcomeEmail: path.join(templatesDir, "TenantTemplate.html"),
+  tenantWelcomeEmail: path.join(templatesDir, "tenantTemplate.html"),
   forgotPasswordEmail: path.join(templatesDir, "ForgotPasswordTemplate.html"),
 };
 
