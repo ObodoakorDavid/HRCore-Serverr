@@ -25,14 +25,34 @@ const employeeSchema = new Schema(
       required: true,
       select: false,
     },
-    isAdmin: {
-      type: Boolean,
-      default: false,
+    jobRole: {
+      type: String,
     },
+    documents: [
+      {
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          default: () => new mongoose.Types.ObjectId(),
+        },
+        url: {
+          type: String,
+          required: true,
+        },
+        fileType: {
+          type: String,
+          enum: ["image", "document"],
+          required: true,
+        },
+      },
+    ],
     role: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
       default: null,
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
     isActive: {
       type: Boolean,

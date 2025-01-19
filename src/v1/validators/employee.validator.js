@@ -110,3 +110,50 @@ export const bulkEmployeeInviteValidator = [
   },
   handleValidationErrors,
 ];
+
+export const employeeProfileUpdateValidator = [
+  body("name").optional().isString().withMessage("Name must be a string."),
+  body("jobRole").optional().isString().withMessage("Role must be a string."),
+  body("lineManager")
+    .optional()
+    .isMongoId()
+    .withMessage("Line Manager must be a valid MongoDB ID."),
+
+  // Custom middleware to handle file validation
+  (req, res, next) => {
+    if (!req.files || !req.files.file) {
+      return next(); // Skip file validation if no file is uploaded
+    }
+
+    const file = req.files.file;
+
+    const validFileTypes = [
+      "text/csv",
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+    ];
+
+    // Validate file type
+    if (!validFileTypes.includes(file.mimetype)) {
+      throw ApiError.badRequest(
+        `Invalid file type. Allowed types are: ${validFileTypes.join(", ")}`
+      );
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10 MB
+    if (file.size > maxSize) {
+      throw ApiError.badRequest(
+        `File size exceeds the maximum allowed limit of ${
+          maxSize / 1024 / 1024
+        } MB.`
+      );
+    }
+
+    next();
+  },
+
+  // Handle validation errors
+  handleValidationErrors,
+];

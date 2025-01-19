@@ -14,6 +14,7 @@ import {
   saveFileToUploads,
 } from "../../utils/csvParserUtil.js";
 import PasswordReset from "../models/passwordReset.model.js";
+import { uploadToCloudinary } from "./upload.service.js";
 
 // async function addEmployeeToTenant(employeeData = {}) {
 //   const { email, password, tenantId } = employeeData;
@@ -289,6 +290,52 @@ async function employeeBulkInvite(file, tenantId) {
   );
 }
 
+// Update Profile
+async function updateProfile(employeeId, tenantId, profileData = {}, file) {
+  let fileData = null;
+
+  console.log(file);
+
+  // return ApiSuccess.ok("Profile Updated Successfully");
+
+  if (file) {
+    const fileUrl = await uploadToCloudinary(file.tempFilePath);
+
+    // Determine the file type based on its MIME type
+    const fileType = file.mimetype.startsWith("image/") ? "image" : "document";
+
+    fileData = {
+      url: fileUrl,
+      fileType,
+    };
+  }
+
+  // Prepare the update payload
+  const updatePayload = { ...profileData };
+
+  // If there's file data, add it to the documents array
+  if (fileData) {
+    updatePayload.$push = { documents: fileData };
+  }
+
+  const employee = await Employee.findOneAndUpdate(
+    {
+      _id: employeeId,
+      tenantId: tenantId,
+    },
+    updatePayload,
+    { new: true, runValidators: true }
+  );
+
+  if (!employee) {
+    throw ApiError.badRequest("No user with this email or tenant");
+  }
+
+  return ApiSuccess.ok("Profile Updated Successfully", {
+    employee,
+  });
+}
+
 // Forgot Password
 async function forgotPassword(email) {
   const employee = await Employee.findOne({ email }).populate("tenantId");
@@ -366,4 +413,5 @@ export default {
   acceptInvite,
   getEmployees,
   employeeBulkInvite,
+  updateProfile,
 };

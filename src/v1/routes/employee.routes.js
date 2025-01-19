@@ -5,6 +5,7 @@ import {
   employeeForgotPasswordValidator,
   employeeInviteValidator,
   employeeLogInValidator,
+  employeeProfileUpdateValidator,
   employeeResetPasswordValidator,
   employeeSignUpValidator,
 } from "../validators/employee.validator.js";
@@ -19,6 +20,7 @@ import {
   getEmployeeDetails,
   getEmployees,
   sendInviteToEmployee,
+  updateEmployeeProfile,
 } from "../controllers/employee.controller.js";
 import { isAuth, isEmployee, isTenantAdmin } from "../../middlewares/auth.js";
 
@@ -29,6 +31,17 @@ router.route("/").get(tenantMiddleware, getEmployees).all(methodNotAllowed);
 router
   .route("/auth")
   .get(tenantMiddleware, isAuth, isEmployee, getEmployeeDetails)
+  .all(methodNotAllowed);
+
+router
+  .route("/auth/profile")
+  .put(
+    tenantMiddleware,
+    isAuth,
+    isEmployee,
+    employeeProfileUpdateValidator,
+    updateEmployeeProfile
+  )
   .all(methodNotAllowed);
 
 router

@@ -12,7 +12,7 @@ import {
   deleteLeaveRequest,
 } from "../controllers/leave.controller.js";
 import { tenantMiddleware } from "../../middlewares/tenant.middleware.js";
-import { isEmployee, isTenantAdmin } from "../../middlewares/auth.js";
+import { isAuth, isEmployee, isTenantAdmin } from "../../middlewares/auth.js";
 import {
   leaveTypeValidator,
   leaveTypeUpdateValidator,
@@ -26,18 +26,25 @@ const router = express.Router();
 router
   .route("/leave-type")
   .get(tenantMiddleware, getLeaveTypes) // Get all leave types for the tenant
-  .post(tenantMiddleware, isTenantAdmin, leaveTypeValidator, addLeaveType) // Add a new leave type
+  .post(
+    tenantMiddleware,
+    isAuth,
+    isTenantAdmin,
+    leaveTypeValidator,
+    addLeaveType
+  ) // Add a new leave type
   .all(methodNotAllowed);
 
 router
   .route("/leave-type/:leaveTypeId")
   .put(
     tenantMiddleware,
+    isAuth,
     isTenantAdmin,
     leaveTypeUpdateValidator,
     updateLeaveType
   ) // Update leave type
-  .delete(tenantMiddleware, isTenantAdmin, deleteLeaveType) // Delete leave type
+  .delete(tenantMiddleware, isAuth, isTenantAdmin, deleteLeaveType) // Delete leave type
   .all(methodNotAllowed);
 
 // Leave Requests Routes

@@ -64,6 +64,20 @@ export const employeeBulkInvite = asyncWrapper(async (req, res, next) => {
   res.status(201).json(result);
 });
 
+export const updateEmployeeProfile = asyncWrapper(async (req, res, next) => {
+  const { tenantId } = req.tenant;
+  const employeeId = req.employee.employeeId;
+  const profileData = req.body;
+
+  const result = await employeeService.updateProfile(
+    employeeId,
+    tenantId,
+    profileData,
+    req?.files?.file ? req.files?.file : null
+  );
+  res.status(200).json(result);
+});
+
 export default {
   employeeForgotPassword,
 };
