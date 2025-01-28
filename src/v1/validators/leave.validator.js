@@ -13,11 +13,20 @@ export const leaveTypeValidator = [
     .withMessage("Leave type name cannot be empty"),
 
   body("defaultBalance")
-    .optional()
+    .exists()
+    .withMessage("Default balance name is required")
     .isNumeric()
     .withMessage("Default balance must be a number")
     .isInt({ min: 0 })
     .withMessage("Default balance must be a positive integer"),
+
+  body("levelId")
+    .exists()
+    .withMessage("levelId is required")
+    .notEmpty()
+    .withMessage("levelId cannot be empty")
+    .isMongoId()
+    .withMessage("levelId must be a valid mongo Id"),
 
   handleValidationErrors,
 ];
@@ -38,6 +47,13 @@ export const leaveTypeUpdateValidator = [
     .isInt({ min: 0 })
     .withMessage("Default balance must be a positive integer"),
 
+  body("levelId")
+    .optional()
+    .notEmpty()
+    .withMessage("levelId cannot be empty")
+    .isMongoId()
+    .withMessage("levelId must be a valid mongo Id"),
+
   handleValidationErrors,
 ];
 
@@ -55,25 +71,27 @@ export const leaveRequestValidator = [
     .isDate()
     .withMessage("Invalid startDate"),
 
-  body("endDate")
+  body("resumptionDate")
     .exists()
-    .withMessage("endDate is required")
+    .withMessage("resumption date is required")
     .isDate()
-    .withMessage("Invalid endDate")
+    .withMessage("Invalid resumption date")
     .custom((value, { req }) => {
       if (new Date(value) < new Date(req.body.from)) {
-        throw ApiError.badRequest("To date must be after the From date");
+        throw ApiError.badRequest(
+          "start date must be after the resumption date"
+        );
       }
       return true;
     }),
 
-  body("daysTaken")
+  body("duration")
     .exists()
-    .withMessage("daysTaken is required")
+    .withMessage("duration is required")
     .isNumeric()
-    .withMessage("daysTaken must be a number")
+    .withMessage("duration must be a number")
     .isInt({ min: 0 })
-    .withMessage("daysTaken must be a positive integer"),
+    .withMessage("duration must be a positive integer"),
 
   body("description")
     .exists()
@@ -89,8 +107,20 @@ export const leaveRequestUpdateValidator = [
   body("status")
     .exists()
     .withMessage("Status is required")
-    .isIn(["pending", "approved", "rejected"])
-    .withMessage("Status must be one of: pending, approved, rejected"),
+    .isIn(["approved", "rejected"])
+    .withMessage("Status must be one of: approved, rejected"),
+
+  body("reason")
+    .if((value, { req }) => {
+      if (req.body.status === "rejected") {
+        throw ApiError.unprocessableEntity("Please provide a reason");
+      }
+      return true;
+    }) // Only validate if status is "rejected"
+    .exists()
+    .withMessage("Reason is required when status is rejected")
+    .isString()
+    .withMessage("Reason must be a string"),
 
   handleValidationErrors,
 ];

@@ -55,6 +55,31 @@ export const getLeaveRequests = asyncWrapper(async (req, res, next) => {
   res.status(200).json(result);
 });
 
+export const getEmployeeLeaveRequests = asyncWrapper(async (req, res, next) => {
+  const { tenantId } = req.tenant;
+  const query = req.query;
+  const { employeeId } = req.employee;
+  const result = await leaveService.getLeaveRequests(
+    { ...query, employee: employeeId },
+    tenantId
+  );
+  res.status(200).json(result);
+});
+
+export const getManagerLeaveRequests = asyncWrapper(async (req, res, next) => {
+  const { tenantId } = req.tenant;
+  const query = req.query;
+  const { employeeId } = req.employee;
+
+  console.log({ employeeId });
+
+  const result = await leaveService.getLeaveRequests(
+    { ...query, lineManager: employeeId },
+    tenantId
+  );
+  res.status(200).json(result);
+});
+
 export const getSingleLeaveRequest = asyncWrapper(async (req, res, next) => {
   const { tenantId } = req.tenant;
   const { leaveRequestId } = req.params;
@@ -69,9 +94,11 @@ export const updateLeaveRequest = asyncWrapper(async (req, res, next) => {
   const { tenantId } = req.tenant;
   const leaveRequestData = req.body;
   const { leaveRequestId } = req.params;
+  const { employeeId } = req.employee;
   const result = await leaveService.updateLeaveRequest(
     leaveRequestId,
     leaveRequestData,
+    employeeId,
     tenantId
   );
   res.status(200).json(result);
@@ -84,5 +111,13 @@ export const deleteLeaveRequest = asyncWrapper(async (req, res, next) => {
     leaveRequestId,
     tenantId
   );
+  res.status(200).json(result);
+});
+
+// Leave Balance
+export const getLeaveBalance = asyncWrapper(async (req, res, next) => {
+  const { tenantId } = req.tenant;
+  const { employeeId } = req.employee; // Employee making the request
+  const result = await leaveService.getLeaveBalance(employeeId, tenantId);
   res.status(200).json(result);
 });

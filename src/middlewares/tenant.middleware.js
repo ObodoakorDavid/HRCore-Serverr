@@ -7,7 +7,7 @@ const tenantMiddleware = asyncWrapper(async (req, res, next) => {
   const tenantId = req.headers["x-tenant-id"];
 
   if (!tenantId || !mongoose.isValidObjectId(tenantId)) {
-    throw ApiError.badRequest("Tenant ID is required");
+    throw ApiError.unauthorized("Tenant ID is required");
   }
 
   await tenantService.getTenant(tenantId);

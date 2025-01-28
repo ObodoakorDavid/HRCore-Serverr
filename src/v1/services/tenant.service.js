@@ -116,13 +116,13 @@ async function getLinks(query = {}, tenantId) {
     ];
   }
 
-  const { documents: links, pagination } = await paginate(
-    Link,
-    filter,
+  const { documents: links, pagination } = await paginate({
+    model: Link,
+    query: filter,
     page,
     limit,
-    sort
-  );
+    sort,
+  });
 
   return ApiSuccess.created("Links retrieved successfully", {
     links,

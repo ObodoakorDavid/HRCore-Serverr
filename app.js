@@ -14,6 +14,7 @@ import employeeRoutesV1 from "./src/v1/routes/employee.routes.js";
 import tenantRoutesV1 from "./src/v1/routes/tenant.routes.js";
 import rolesRoutesV1 from "./src/v1/routes/role.routes.js";
 import leaveRoutesV1 from "./src/v1/routes/leave.routes.js";
+import levelRoutesV1 from "./src/v1/routes/level.routes.js";
 
 //
 import authRoutesV1 from "./src/v1/routes/auth.routes.js";
@@ -22,7 +23,7 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 app.use(express.json());
-app.use(cors());
+app.use(cors([{ origin: "*" }]));
 app.use(
   fileUpload({
     useTempFiles: true,
@@ -41,6 +42,8 @@ app.use("/api/v1/employee", employeeRoutesV1);
 app.use("/api/v1/tenant", tenantRoutesV1);
 app.use("/api/v1/roles", rolesRoutesV1);
 app.use("/api/v1/leave", leaveRoutesV1);
+app.use("/api/v1/level", levelRoutesV1);
+
 app.use(notFound);
 app.use(errorMiddleware);
 

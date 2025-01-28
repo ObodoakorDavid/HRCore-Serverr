@@ -1,5 +1,3 @@
-name,email,role
-David Obodoakor,bigdavetest0071@gmail.com,Developer
-Samuel Ndukwe,davidtumuch11@gmail.com,Manager
-John Smith,Testing1@gmail.com,Developer
-John Smith1,Testing111@gmail.com,Developer
+name,email,role,jobRole,level
+David Obodoakor,bigdavetest007@gmail.com,Developer,Software Engineer,BO
+Samuel Ndukwe,davidtumuch@gmail.com,Manager,Team Lead,SBO

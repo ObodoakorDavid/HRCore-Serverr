@@ -119,6 +119,11 @@ export const employeeProfileUpdateValidator = [
     .isMongoId()
     .withMessage("Line Manager must be a valid MongoDB ID."),
 
+  // body("levelId")
+  //   .optional()
+  //   .isMongoId()
+  //   .withMessage("Line Manager must be a valid MongoDB ID."),
+
   // Custom middleware to handle file validation
   (req, res, next) => {
     if (!req.files || !req.files.file) {

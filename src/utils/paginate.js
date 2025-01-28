@@ -1,19 +1,19 @@
 // Helper function for pagination
-export const paginate = async (
+export const paginate = async ({
   model,
   query = {},
   page = 1,
-  perPage = 10,
+  limit = 10,
   sort = { createdAt: -1 },
   populateOptions = [],
-  select = []
-) => {
-  const skip = (page - 1) * perPage;
+  select = [],
+}) => {
+  const skip = (page - 1) * limit;
 
   let queryBuilder = model
     .find(query)
     .skip(skip)
-    .limit(perPage)
+    .limit(limit)
     .sort(sort)
     .select(select);
 
@@ -24,7 +24,7 @@ export const paginate = async (
   const documents = await queryBuilder;
 
   const totalCount = await model.countDocuments(query);
-  const totalPages = Math.ceil(totalCount / perPage);
+  const totalPages = Math.ceil(totalCount / limit);
 
   return {
     documents,
@@ -32,7 +32,7 @@ export const paginate = async (
       totalCount,
       totalPages,
       currentPage: page,
-      perPage,
+      perPage: limit,
     },
   };
 };

@@ -10,6 +10,9 @@ import {
   getSingleLeaveRequest,
   updateLeaveRequest,
   deleteLeaveRequest,
+  getLeaveBalance,
+  getEmployeeLeaveRequests,
+  getManagerLeaveRequests,
 } from "../controllers/leave.controller.js";
 import { tenantMiddleware } from "../../middlewares/tenant.middleware.js";
 import { isAuth, isEmployee, isTenantAdmin } from "../../middlewares/auth.js";
@@ -51,14 +54,40 @@ router
 router
   .route("/leave-request")
   .get(tenantMiddleware, getLeaveRequests) // Get all leave requests for the tenant
-  .post(tenantMiddleware, isEmployee, leaveRequestValidator, requestLeave) // Request a new leave
+  .post(
+    tenantMiddleware,
+    isAuth,
+    isEmployee,
+    leaveRequestValidator,
+    requestLeave
+  ) // Request a new leave
+  .all(methodNotAllowed);
+
+router
+  .route("/leave-request/employee")
+  .get(tenantMiddleware, isAuth, isEmployee, getEmployeeLeaveRequests) // Get all leave requests for an employee
+  .all(methodNotAllowed);
+
+router
+  .route("/leave-request/manager")
+  .get(tenantMiddleware, isAuth, isEmployee, getManagerLeaveRequests) // Get all leave requests for a manager
   .all(methodNotAllowed);
 
 router
   .route("/leave-request/:leaveRequestId")
-  .get(tenantMiddleware, getSingleLeaveRequest) // Get a specific leave request
-  .put(tenantMiddleware, leaveRequestUpdateValidator, updateLeaveRequest) // Update leave request (approve, change dates, etc.)
-  .delete(tenantMiddleware, deleteLeaveRequest) // Delete leave request
+  .get(tenantMiddleware, isAuth, getSingleLeaveRequest) // Get a specific leave request
+  .put(
+    tenantMiddleware,
+    isAuth,
+    leaveRequestUpdateValidator,
+    updateLeaveRequest
+  ) // Update leave request (approve, change dates, etc.)
+  .delete(tenantMiddleware, isAuth, deleteLeaveRequest) // Delete leave request
+  .all(methodNotAllowed);
+
+router
+  .route("/balance")
+  .get(tenantMiddleware, isAuth, isEmployee, getLeaveBalance)
   .all(methodNotAllowed);
 
 export default router;

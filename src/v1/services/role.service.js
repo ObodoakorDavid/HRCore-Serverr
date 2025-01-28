@@ -33,13 +33,13 @@ async function getRoles(query = {}, tenantId) {
     ];
   }
 
-  const { documents: roles, pagination } = await paginate(
-    Role,
-    filter,
+  const { documents: roles, pagination } = await paginate({
+    model: Role,
+    query: filter,
     page,
     limit,
-    sort
-  );
+    sort,
+  });
 
   return ApiSuccess.created("Roles retrieved successfully", {
     roles,

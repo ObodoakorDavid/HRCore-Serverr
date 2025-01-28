@@ -8,7 +8,16 @@ const leaveTypeSchema = new mongoose.Schema(
       ref: "Tenant",
       required: true,
     },
-    name: { type: String, required: true },
+    name: {
+      type: String,
+      required: true,
+      lowercase: true,
+    },
+    levelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Level",
+      required: true,
+    },
     defaultBalance: { type: Number, default: 0 },
   },
   { timestamps: true }
@@ -22,12 +31,12 @@ const employeeLeaveBalanceSchema = new mongoose.Schema(
       ref: "Tenant",
       required: true,
     },
-    employee: {
+    employeeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
       required: true,
     },
-    leaveType: {
+    leaveTypeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "LeaveType",
       required: true,
@@ -53,7 +62,17 @@ const leaveHistorySchema = new mongoose.Schema(
     lineManager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
-      // required: true,
+      required: true,
+    },
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
     },
     leaveType: {
       type: mongoose.Schema.Types.ObjectId,
@@ -61,15 +80,15 @@ const leaveHistorySchema = new mongoose.Schema(
       required: true,
     },
     startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
-    daysTaken: { type: Number, required: true },
+    resumptionDate: { type: Date, required: true },
+    duration: { type: Number, required: true },
     description: { type: String },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    rejectionReason: { type: String },
+    reason: { type: String },
   },
   { timestamps: true }
 );

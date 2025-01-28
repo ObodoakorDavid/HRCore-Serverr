@@ -21,8 +21,6 @@ const isAuth = asyncWrapper(async (req, res, next) => {
   if (!req?.user?.roles?.includes("employee")) {
     req.employee = payload;
   }
-
-  console.log(payload);
   //Holds whichever user is logged in
   req.user = payload;
   next();

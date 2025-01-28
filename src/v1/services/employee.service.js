@@ -16,27 +16,6 @@ import {
 import PasswordReset from "../models/passwordReset.model.js";
 import { uploadToCloudinary } from "./upload.service.js";
 
-// async function addEmployeeToTenant(employeeData = {}) {
-//   const { email, password, tenantId } = employeeData;
-//   await tenantService.getTenant(tenantId);
-//   const hashedPassword = await hashPassword(password);
-
-//   const employeeExists = await Employee.findOne({ email });
-
-//   if (employeeExists) {
-//     throw ApiError.badRequest("Employee with this email already exists");
-//   }
-
-//   const employee = await Employee.create({
-//     ...employeeData,
-//     password: hashedPassword,
-//   });
-
-//   return ApiSuccess.created("Employee added successfully", {
-//     employee,
-//   });
-// }
-
 async function signIn(employeeData = {}) {
   const { email, password } = employeeData;
   const employee = await Employee.findOne({ email }).select("+password");
@@ -176,7 +155,17 @@ async function getEmployeeDetails(employeeId, tenantId) {
   const employee = await Employee.findOne({
     _id: employeeId,
     tenantId,
-  }).populate("tenantId");
+  }).populate([
+    { path: "tenantId" },
+    {
+      path: "lineManager",
+      select: "name email",
+    },
+    {
+      path: "levelId",
+      select: "name",
+    },
+  ]);
 
   if (!employee) {
     throw ApiError.notFound("Employee not found");
@@ -198,17 +187,20 @@ async function getEmployees(query = {}, tenantId) {
     ];
   }
 
-  const { documents: employees, pagination } = await paginate(
-    Employee,
-    filter,
+  const { documents: employees, pagination } = await paginate({
+    model: Employee,
+    query: filter,
     page,
     limit,
-    sort
-  );
+    sort,
+  });
+
+  const stats = await Employee.getEmployeeStats();
 
   return ApiSuccess.created("Employee Retrived Successfully", {
     employees,
     pagination,
+    stats,
   });
 }
 
@@ -224,7 +216,7 @@ async function employeeBulkInvite(file, tenantId) {
     throw ApiError.badRequest("The csv file you provided is empty");
   }
 
-  const invitations = extractAndValidateData(parsedData);
+  const invitations = await extractAndValidateData(parsedData, tenantId);
 
   console.log({ invitations });
 
@@ -249,6 +241,8 @@ async function employeeBulkInvite(file, tenantId) {
       name: invite.name,
       tenantId,
       password: hashedPassword,
+      jobRole: invite.jobRole,
+      levelId: invite.levelId,
     });
 
     newEmployees.push(newEmployee);
