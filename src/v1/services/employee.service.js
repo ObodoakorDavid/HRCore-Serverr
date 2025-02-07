@@ -33,7 +33,7 @@ async function signIn(employeeData = {}) {
   const token = generateToken({
     employeeId: employee._id,
     isAdmin: employee.isAdmin,
-    roles: ["employee"],
+    roles: employee.isAdmin ? ["admin", "employee"] : ["employee"],
   });
 
   employee.password = undefined;
@@ -112,8 +112,6 @@ async function sendInviteToEmployee(InviteData = {}, tenantId) {
 }
 
 async function acceptInvite(token, tenantId) {
-  console.log({ token, tenantId });
-
   const link = await Link.findOne({
     token,
     tenantId,
@@ -165,6 +163,10 @@ async function getEmployeeDetails(employeeId, tenantId) {
       path: "levelId",
       select: "name",
     },
+    {
+      path: "reliever",
+      select: "name",
+    },
   ]);
 
   if (!employee) {
@@ -176,15 +178,28 @@ async function getEmployeeDetails(employeeId, tenantId) {
   });
 }
 
-async function getEmployees(query = {}, tenantId) {
+async function getEmployees(query = {}, tenantId, employeeId = null) {
   const { page = 1, limit = 10, search, sort = { createdAt: -1 } } = query;
-
   const filter = { tenantId };
+
   if (search) {
     filter.$or = [
       { name: { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
     ];
+  }
+
+  const populateOptions = [
+    {
+      path: "levelId",
+      select: "name",
+    },
+  ];
+
+  let excludeById = null;
+
+  if (employeeId) {
+    excludeById = employeeId;
   }
 
   const { documents: employees, pagination } = await paginate({
@@ -193,6 +208,8 @@ async function getEmployees(query = {}, tenantId) {
     page,
     limit,
     sort,
+    populateOptions,
+    excludeById,
   });
 
   const stats = await Employee.getEmployeeStats();
@@ -217,8 +234,6 @@ async function employeeBulkInvite(file, tenantId) {
   }
 
   const invitations = await extractAndValidateData(parsedData, tenantId);
-
-  console.log({ invitations });
 
   const newEmployees = [];
 
@@ -285,31 +300,35 @@ async function employeeBulkInvite(file, tenantId) {
 }
 
 // Update Profile
-async function updateProfile(employeeId, tenantId, profileData = {}, file) {
+async function updateProfile(employeeId, tenantId, profileData = {}, files) {
+  const { file, avatar } = files;
+
   let fileData = null;
-
-  console.log(file);
-
-  // return ApiSuccess.ok("Profile Updated Successfully");
+  let avatarUrl = null;
 
   if (file) {
     const fileUrl = await uploadToCloudinary(file.tempFilePath);
 
     // Determine the file type based on its MIME type
     const fileType = file.mimetype.startsWith("image/") ? "image" : "document";
-
     fileData = {
       url: fileUrl,
       fileType,
     };
   }
 
-  // Prepare the update payload
+  if (avatar) {
+    const imgUrl = await uploadToCloudinary(avatar.tempFilePath);
+    avatarUrl = imgUrl;
+  }
+
   const updatePayload = { ...profileData };
 
-  // If there's file data, add it to the documents array
   if (fileData) {
     updatePayload.$push = { documents: fileData };
+  }
+  if (avatarUrl) {
+    updatePayload.avatar = avatarUrl;
   }
 
   const employee = await Employee.findOneAndUpdate(
@@ -397,8 +416,35 @@ async function resetPassword(token, newPassword) {
   return ApiSuccess.ok("Password has been reset successfully");
 }
 
+async function makeEmployeeAdmin(employeeId, tenantId, { isAdmin } = {}) {
+  if (typeof isAdmin !== "boolean") {
+    throw ApiError.badRequest("isAdmin must be a boolean value");
+  }
+
+  const employee = await Employee.findOneAndUpdate(
+    {
+      _id: employeeId,
+      tenantId,
+    },
+    { isAdmin },
+    {
+      runValidators: true,
+      new: true,
+    }
+  );
+
+  if (!employee) {
+    throw ApiError.notFound("Employee not found");
+  }
+
+  const message = isAdmin
+    ? "Employee granted admin rights"
+    : "Employee admin rights revoked";
+
+  return ApiSuccess.ok(message, { employee });
+}
+
 export default {
-  // addEmployeeToTenant,
   signIn,
   forgotPassword,
   resetPassword,
@@ -408,4 +454,5 @@ export default {
   getEmployees,
   employeeBulkInvite,
   updateProfile,
+  makeEmployeeAdmin,
 };

@@ -9,9 +9,12 @@ import { paginate } from "../../utils/paginate.js";
 import Employee from "../models/employee.model.js";
 import levelService from "./level.service.js";
 import mongoose from "mongoose";
+import emailUtils from "../../utils/emailUtils.js";
+import frontendURLs from "../../utils/frontendURLs.js";
 
+//Request For Leave
 async function requestLeave(leaveData = {}, employeeId, tenantId) {
-  const { leaveTypeId, startDate, resumptionDate, duration, description } =
+  const { leaveTypeId, startDate, resumptionDate, duration, reason } =
     leaveData;
 
   // Validate leave balance
@@ -19,8 +22,6 @@ async function requestLeave(leaveData = {}, employeeId, tenantId) {
     employeeId,
     leaveTypeId,
   });
-
-  console.log(leaveBalance);
 
   if (!leaveBalance) {
     const leaveType = await LeaveType.findById(leaveTypeId);
@@ -43,31 +44,43 @@ async function requestLeave(leaveData = {}, employeeId, tenantId) {
 
   leaveBalance.balance = leaveBalance.balance - duration;
 
-  const employee = await Employee.findById(employeeId);
+  const employee = await Employee.findById(employeeId).populate(
+    "tenantId lineManager"
+  );
 
   if (!employee.lineManager) {
-    throw ApiError.badRequest("Update your line manager information first");
+    throw ApiError.badRequest("Please update your line manager");
+  }
+
+  if (employee.isOnLeave) {
+    throw ApiError.badRequest("You are already on leave");
   }
 
   // Create leave request
   const leaveRequest = new LeaveHistory({
     tenantId,
     employee: employeeId,
-    lineManager: employee.lineManager,
+    lineManager: employee.lineManager._id,
     leaveType: leaveTypeId,
     startDate,
     resumptionDate,
     duration,
-    description,
+    reason,
     tenantId,
     status: "pending",
   });
 
+  employee.isOnLeave = true;
+
   await leaveRequest.save();
   await leaveBalance.save();
 
-  console.log(leaveBalance);
   // Send mail to the line manager
+  const emailObject = createEmailObject(leaveRequest, employee);
+
+  try {
+    await emailUtils.sendLeaveRequestEmail(emailObject);
+  } catch {}
 
   return ApiSuccess.created(
     "Leave request submitted successfully",
@@ -75,6 +88,7 @@ async function requestLeave(leaveData = {}, employeeId, tenantId) {
   );
 }
 
+// Retrieve All Leave Request
 async function getLeaveRequests(query = {}, tenantId) {
   const {
     page = 1,
@@ -84,8 +98,6 @@ async function getLeaveRequests(query = {}, tenantId) {
     employee,
     lineManager,
   } = query;
-
-  console.log({ query });
 
   const filter = { tenantId };
   const conditions = [];
@@ -126,8 +138,6 @@ async function getLeaveRequests(query = {}, tenantId) {
     },
   ];
 
-  console.log(query);
-
   const { documents: leaveRequests, pagination } = await paginate({
     model: LeaveHistory,
     query: filter,
@@ -143,12 +153,32 @@ async function getLeaveRequests(query = {}, tenantId) {
   });
 }
 
+// Retrieve One Leave Request
 async function getSingleLeaveRequest(leaveId, tenantId) {
   if (!leaveId) {
     throw ApiError.badRequest("LeaveId not provided.");
   }
 
-  const leaveRequest = await LeaveHistory.findOne({ _id: leaveId, tenantId });
+  const populateOptions = [
+    {
+      path: "employee",
+      select: "name",
+    },
+    {
+      path: "leaveType",
+      select: "name",
+    },
+    {
+      path: "lineManager",
+      select: "name",
+    },
+  ];
+
+  const leaveRequest = await LeaveHistory.findOne({
+    _id: leaveId,
+    tenantId,
+  }).populate(populateOptions);
+
   if (!leaveRequest) {
     throw ApiError.badRequest(
       "No leave request found with the provided leaveId."
@@ -164,16 +194,7 @@ async function updateLeaveRequest(
   employeeId,
   tenantId
 ) {
-  if (!leaveId) {
-    throw ApiError.badRequest("LeaveId not provided.");
-  }
-
   const { status, reason } = leaveRequestData;
-
-  // Validate status
-  if (!["approved", "rejected"].includes(status)) {
-    throw ApiError.badRequest("Invalid status.");
-  }
 
   // Find the leave request
   const leaveRequest = await LeaveHistory.findOne({ _id: leaveId, tenantId });
@@ -183,12 +204,27 @@ async function updateLeaveRequest(
     );
   }
 
-  // TODO check if the person trying to update is the lineManager
+  // Check if the person trying to update the leave request is the lineManager or an HR admin
+  const employee = await Employee.findById(employeeId).populate([
+    {
+      path: "lineManager",
+    },
+    {
+      path: "tenantId",
+    },
+  ]);
+
+  if (
+    employee._id.toString() !== leaveRequest.lineManager.toString() &&
+    !employee.isAdmin
+  ) {
+    throw ApiError.badRequest("You can't update this leave request");
+  }
 
   // Update leave request status
   leaveRequest.status = status;
 
-  // If approved, deduct leave balance
+  // If rejected, add leave balance back
   if (status === "rejected") {
     const leaveBalance = await EmployeeLeaveBalance.findOne({
       employeeId: leaveRequest.employee,
@@ -196,15 +232,33 @@ async function updateLeaveRequest(
     });
 
     leaveBalance.balance += leaveRequest.duration;
-    leaveRequest.rejectedBy = employeeId;
-    leaveRequest.reason = reason;
+    leaveRequest.rejectionReason = reason;
+    leaveRequest.rejectedBy = leaveRequest.lineManager._id;
     await leaveBalance.save();
+
+    try {
+      const emailObject = createEmailObject(leaveRequest, employee);
+      await emailUtils.sendLeaveRejectionEmail(emailObject);
+    } catch (error) {
+      console.error("Failed to send leave rejection email:", error);
+    }
   } else if (status === "approved") {
-    leaveRequest.rejectedBy = employeeId;
+    leaveRequest.approvalReason = reason;
+    leaveRequest.approvedBy = leaveRequest.lineManager._id;
+    const leaveEmployee = await Employee.findById(leaveRequest.employee._id);
+    leaveEmployee.isOnLeave = true;
+    await leaveEmployee.save();
+
+    try {
+      const emailObject = createEmailObject(leaveRequest, employee);
+      await emailUtils.sendLeaveApprovalEmail(emailObject);
+    } catch (error) {
+      console.error("Failed to send leave approval email:", error);
+    }
   }
 
   await leaveRequest.save();
-  return ApiSuccess.created(
+  return ApiSuccess.ok(
     "Leave request status updated successfully",
     leaveRequest
   );
@@ -219,6 +273,7 @@ async function deleteLeaveRequest(leaveId, tenantId) {
     _id: leaveId,
     tenantId,
   });
+
   if (!leaveRequest) {
     throw ApiError.badRequest(
       "No leave request found with the provided leaveId."
@@ -242,8 +297,6 @@ async function addLeaveType(leaveTypeData = {}, tenantId) {
     true,
     [{ path: "leaveTypes", select: "name" }]
   );
-
-  console.log(levelWithLeaveType);
 
   // Check if the leave type name already exists in the level's leaveTypes array
   const leaveTypeExistsInLevel = levelWithLeaveType.leaveTypes.some(
@@ -308,6 +361,7 @@ async function getLeaveTypes(query = {}, tenantId) {
     page,
     limit,
     populateOptions,
+    sort,
   });
 
   return ApiSuccess.ok("Leave types retrieved successfully", {
@@ -430,6 +484,23 @@ async function getLeaveBalance(employeeId, tenantId) {
   return ApiSuccess.ok("Leave balance retrieved successfully", {
     leaveBalance: leaveBalances.length > 0 ? leaveBalances : [],
   });
+}
+
+function createEmailObject(leaveRequest, employee) {
+  return {
+    email: employee.lineManager?.email,
+    tenantName: employee.tenantId?.name,
+    color: employee.tenantId?.color,
+    logo: employee.tenantId?.logo,
+    lineManagerName: employee.lineManager?.name,
+    employeeName: employee.name,
+    startDate: leaveRequest.startDate,
+    resumptionDate: leaveRequest.resumptionDate,
+    leaveReason: leaveRequest.reason,
+    rejectionReason: leaveRequest.rejectionReason,
+    approvalReason: leaveRequest.approvalReason,
+    leaveRequestUrl: frontendURLs.employee.leaveDetails(leaveRequest._id),
+  };
 }
 
 export default {

@@ -8,23 +8,38 @@ import Link from "../models/link.model.js";
 import crypto from "crypto";
 import emailUtils from "../../utils/emailUtils.js";
 import PasswordReset from "../models/passwordReset.model.js";
+import { uploadToCloudinary } from "./upload.service.js";
 
-async function addTenant(tenantData = {}) {
-  const { name, logo, color, email } = tenantData;
+async function getTenantByID(tenantId) {
+  if (!tenantId) {
+    throw ApiError.badRequest("Client ID not provided");
+  }
+  const tenant = await Tenant.findById(tenantId);
+  if (!tenant) {
+    throw ApiError.badRequest("No tenant with the tenantId provided");
+  }
+  return tenant;
+}
+
+async function addTenant(tenantData = {}, files = {}) {
+  const { name, color, email } = tenantData;
+  const { logo } = files;
 
   // Check if a tenant with the same name already exists
   const existingTenant = await Tenant.findOne({ name });
   if (existingTenant) {
-    throw ApiError.badRequest("A tenant with this name already exists.");
+    2;
+    throw ApiError.badRequest("A client with this name already exists.");
   }
-  const plainPassword = crypto.randomBytes(6).toString("hex");
 
+  const plainPassword = crypto.randomBytes(6).toString("hex");
   const hashedPassword = await hashPassword(plainPassword);
+  const logoImageURL = await uploadToCloudinary(logo.tempFilePath);
 
   // Create a new tenant
   const tenant = new Tenant({
     name,
-    logo,
+    logo: logoImageURL,
     color,
     email,
     password: hashedPassword,
@@ -46,7 +61,7 @@ async function addTenant(tenantData = {}) {
   }
 
   if (!emailInfo) {
-    message = `Tenant added successfully but email deliver`;
+    message = `Tenant added successfully but email not delivered`;
   } else {
     message = `Tenant added successfully, credentials sent to ${emailInfo.envelope.to}`;
   }
@@ -60,14 +75,8 @@ async function getTenants(query = {}) {
 }
 
 async function getTenant(tenantId) {
-  if (!tenantId) {
-    throw ApiError.badRequest("TenantId not provided");
-  }
-  const tenant = await Tenant.findById(tenantId);
-  if (!tenant) {
-    throw ApiError.badRequest("No tenant with the tenantId provided");
-  }
-  return ApiSuccess.created("Tenant retrieved successfully", { tenant });
+  const tenant = await getTenantByID(tenantId);
+  return ApiSuccess.created("Client retrieved successfully", { tenant });
 }
 
 async function tenantLogin(tenantData) {
@@ -82,25 +91,15 @@ async function tenantLogin(tenantData) {
 
   const token = generateToken({
     tenantId: tenant._id,
+    isAdmin: true,
     roles: ["tenant"],
   });
 
   tenant.password = undefined;
-  return ApiSuccess.created("Login successfully", {
+  return ApiSuccess.created("Login successful", {
     tenant,
     token,
   });
-}
-
-async function getTenantDetails(tenantId) {
-  if (!tenantId) {
-    throw ApiError.badRequest("TenantId not provided");
-  }
-  const tenant = await Tenant.findById(tenantId);
-  if (!tenant) {
-    throw ApiError.badRequest("No tenant with the tenantId provided");
-  }
-  return ApiSuccess.created("Tenant retrieved successfully", { tenant });
 }
 
 async function getLinks(query = {}, tenantId) {
@@ -165,8 +164,6 @@ async function forgotPassword(email) {
 }
 
 async function resetPassword(token, newPassword) {
-  console.log({ token, newPassword });
-
   let decoded;
   try {
     decoded = verifyToken(token);
@@ -206,6 +203,5 @@ export default {
   tenantLogin,
   forgotPassword,
   resetPassword,
-  getTenantDetails,
   getLinks,
 };

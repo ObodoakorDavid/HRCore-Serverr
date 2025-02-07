@@ -8,7 +8,7 @@ import {
   tenantLogin,
   tenantResetPassword,
 } from "../controllers/tenant.controller.js";
-import { validateMongoId } from "../validators/param.validator.js";
+import { validateMongoIdParam } from "../validators/param.validator.js";
 import { tenantMiddleware } from "../../middlewares/tenant.middleware.js";
 import {
   tenantForgotPasswordValidator,
@@ -19,6 +19,7 @@ import { isAuth, isTenantAdmin } from "../../middlewares/auth.js";
 
 const router = express.Router();
 
+//Authentication
 router
   .route("/auth")
   .get(tenantMiddleware, isAuth, isTenantAdmin, getTenantDetails)
@@ -44,9 +45,10 @@ router
   .get(tenantMiddleware, isAuth, isTenantAdmin, getAllInviteLinks)
   .all(methodNotAllowed);
 
+//Public
 router
   .route("/:tenantId")
-  .get(validateMongoId("tenantId"), getTenant)
+  .get(validateMongoIdParam("tenantId"), getTenant)
   .all(methodNotAllowed);
 
 export default router;

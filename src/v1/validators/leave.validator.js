@@ -93,7 +93,7 @@ export const leaveRequestValidator = [
     .isInt({ min: 0 })
     .withMessage("duration must be a positive integer"),
 
-  body("description")
+  body("reason")
     .exists()
     .withMessage("description is required")
     .isString()

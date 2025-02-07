@@ -50,8 +50,6 @@ async function adminLogin(userData = {}) {
     throw ApiError.forbidden("Email Not Verified");
   }
 
-  console.log({ user });
-
   user.password = undefined;
 
   const token = generateToken({

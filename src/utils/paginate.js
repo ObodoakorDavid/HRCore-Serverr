@@ -7,8 +7,14 @@ export const paginate = async ({
   sort = { createdAt: -1 },
   populateOptions = [],
   select = [],
+  excludeById = null,
+  excludeField = "_id",
 }) => {
   const skip = (page - 1) * limit;
+
+  if (excludeById !== null) {
+    query[excludeField] = { $ne: excludeById };
+  }
 
   let queryBuilder = model
     .find(query)

@@ -15,6 +15,7 @@ import tenantRoutesV1 from "./src/v1/routes/tenant.routes.js";
 import rolesRoutesV1 from "./src/v1/routes/role.routes.js";
 import leaveRoutesV1 from "./src/v1/routes/leave.routes.js";
 import levelRoutesV1 from "./src/v1/routes/level.routes.js";
+import superAdminRoutesV1 from "./src/v1/routes/superAdmin.routes.js";
 
 //
 import authRoutesV1 from "./src/v1/routes/auth.routes.js";
@@ -43,6 +44,7 @@ app.use("/api/v1/tenant", tenantRoutesV1);
 app.use("/api/v1/roles", rolesRoutesV1);
 app.use("/api/v1/leave", leaveRoutesV1);
 app.use("/api/v1/level", levelRoutesV1);
+app.use("/api/v1/super-admin", superAdminRoutesV1);
 
 app.use(notFound);
 app.use(errorMiddleware);

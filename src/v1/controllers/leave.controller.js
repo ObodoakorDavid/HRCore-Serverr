@@ -71,8 +71,6 @@ export const getManagerLeaveRequests = asyncWrapper(async (req, res, next) => {
   const query = req.query;
   const { employeeId } = req.employee;
 
-  console.log({ employeeId });
-
   const result = await leaveService.getLeaveRequests(
     { ...query, lineManager: employeeId },
     tenantId

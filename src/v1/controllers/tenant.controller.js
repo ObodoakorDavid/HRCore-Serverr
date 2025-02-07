@@ -21,7 +21,7 @@ export const tenantResetPassword = asyncWrapper(async (req, res, next) => {
 
 export const getTenantDetails = asyncWrapper(async (req, res, next) => {
   const { tenantId } = req.tenant;
-  const result = await tenantService.getTenantDetails(tenantId);
+  const result = await tenantService.getTenant(tenantId);
   res.status(200).json(result);
 });
 

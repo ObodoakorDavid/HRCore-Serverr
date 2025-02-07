@@ -10,6 +10,8 @@ const tenantMiddleware = asyncWrapper(async (req, res, next) => {
     throw ApiError.unauthorized("Tenant ID is required");
   }
 
+  console.log({ tenantId });
+
   await tenantService.getTenant(tenantId);
   req.tenant = { tenantId };
   next();

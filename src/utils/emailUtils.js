@@ -6,6 +6,7 @@ import generateOTP from "../utils/generateOTP.js";
 import createTransporter from "../lib/emailTransporter.js";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { formatDate } from "./dateUtils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -16,6 +17,9 @@ const templatePaths = {
   employeeInviteEmail: path.join(templatesDir, "InviteTemplate.html"),
   tenantWelcomeEmail: path.join(templatesDir, "tenantTemplate.html"),
   forgotPasswordEmail: path.join(templatesDir, "ForgotPasswordTemplate.html"),
+  leaveRquestEmail: path.join(templatesDir, "LeaveRequest.html"),
+  leaveApprovalEmail: path.join(templatesDir, "LeaveApproval.html"),
+  leaveRejectionEmail: path.join(templatesDir, "LeaveRejection.html"),
 };
 
 const templates = Object.fromEntries(
@@ -121,6 +125,140 @@ async function sendWelcomeEmailToTenant({
       plainPassword,
       loginUrl,
       tenantId,
+      loginUrl,
+    });
+
+    return sendEmail({ to: email, subject, text: emailText, html });
+  } catch (error) {
+    console.error("Error sending tenant email:", error);
+    throw error;
+  }
+}
+
+// Leaves
+async function sendLeaveRequestEmail({
+  email,
+  tenantName,
+  color = "#000000",
+  logo,
+  lineManagerName,
+  employeeName,
+  startDate,
+  resumptionDate,
+  leaveReason,
+  leaveRequestUrl,
+  date = new Date().getFullYear(),
+}) {
+  try {
+    const subject = "Leave Request";
+
+    const emailText = `
+      Hello ${lineManagerName},\n\n
+      ${employeeName} has requested leave from ${startDate} to ${resumptionDate} for the following reason:\n\n
+      Reason: ${leaveReason}\n\n
+      Click the link below to view leave details:\n
+      ${leaveRequestUrl}
+    `;
+
+    const html = templates.leaveRquestEmail({
+      tenantName,
+      color,
+      logo,
+      lineManagerName,
+      employeeName,
+      startDate: formatDate(startDate),
+      resumptionDate: formatDate(resumptionDate),
+      leaveReason,
+      leaveRequestUrl,
+      date,
+    });
+
+    return sendEmail({ to: email, subject, text: emailText, html });
+  } catch (error) {
+    console.error("Error sending tenant email:", error);
+    throw error;
+  }
+}
+
+async function sendLeaveApprovalEmail({
+  email,
+  tenantName,
+  color = "#000000",
+  logo,
+  lineManagerName,
+  employeeName,
+  startDate,
+  resumptionDate,
+  leaveReason,
+  leaveRequestUrl,
+  date = new Date().getFullYear(),
+}) {
+  try {
+    const subject = "Leave Request Approved";
+
+    const emailText = `
+      Hello ${lineManagerName},\n\n
+      your leave request from ${startDate} to ${resumptionDate} has been been approved:\n\n
+      Click the link below to view leave details:\n
+      ${leaveRequestUrl}
+    `;
+
+    const html = templates.leaveApprovalEmail({
+      tenantName,
+      color,
+      logo,
+      lineManagerName,
+      employeeName,
+      startDate: formatDate(startDate),
+      resumptionDate: formatDate(resumptionDate),
+      leaveReason,
+      leaveRequestUrl,
+      date,
+    });
+
+    return sendEmail({ to: email, subject, text: emailText, html });
+  } catch (error) {
+    console.error("Error sending tenant email:", error);
+    throw error;
+  }
+}
+
+async function sendLeaveRejectionEmail({
+  email,
+  tenantName,
+  color = "#000000",
+  logo,
+  lineManagerName,
+  employeeName,
+  startDate,
+  resumptionDate,
+  leaveReason,
+  rejectionReason,
+  leaveRequestUrl,
+  date = new Date().getFullYear(),
+}) {
+  try {
+    const subject = "Leave Request";
+
+    const emailText = `
+    Hello ${lineManagerName},\n\n
+    we regret to inform you that your leave request from ${startDate} to ${resumptionDate} has been been rejected:\n\n
+    Click the link below to view leave details:\n
+    ${leaveRequestUrl}
+  `;
+
+    const html = templates.leaveRejectionEmail({
+      tenantName,
+      color,
+      logo,
+      lineManagerName,
+      employeeName,
+      startDate: formatDate(startDate),
+      resumptionDate: formatDate(resumptionDate),
+      leaveReason,
+      rejectionReason,
+      leaveRequestUrl,
+      date,
     });
 
     return sendEmail({ to: email, subject, text: emailText, html });
@@ -158,8 +296,6 @@ async function sendForgotPasswordEmail({
       date,
     });
 
-    // console.log(html);
-
     return sendEmail({ to: email, subject, text: emailText, html });
   } catch (error) {
     console.error("Error sending forgot password email:", error);
@@ -174,4 +310,7 @@ export default {
   sendInvitation,
   sendWelcomeEmailToTenant,
   sendForgotPasswordEmail,
+  sendLeaveRequestEmail,
+  sendLeaveApprovalEmail,
+  sendLeaveRejectionEmail,
 };

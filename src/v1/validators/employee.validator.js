@@ -118,20 +118,26 @@ export const employeeProfileUpdateValidator = [
     .optional()
     .isMongoId()
     .withMessage("Line Manager must be a valid MongoDB ID."),
-
-  // body("levelId")
-  //   .optional()
-  //   .isMongoId()
-  //   .withMessage("Line Manager must be a valid MongoDB ID."),
+  body("reliever")
+    .optional()
+    .isMongoId()
+    .withMessage("Reliever must be a valid MongoDB ID."),
+  body("levelId")
+    .optional()
+    .isMongoId()
+    .withMessage("Line Manager must be a valid MongoDB ID."),
+  body("isAdmin")
+    .optional({})
+    .isBoolean()
+    .withMessage("isAdmin must be a boolean value (true or false)"),
 
   // Custom middleware to handle file validation
   (req, res, next) => {
     if (!req.files || !req.files.file) {
-      return next(); // Skip file validation if no file is uploaded
+      return next();
     }
 
     const file = req.files.file;
-
     const validFileTypes = [
       "text/csv",
       "application/pdf",
@@ -160,5 +166,16 @@ export const employeeProfileUpdateValidator = [
   },
 
   // Handle validation errors
+  handleValidationErrors,
+];
+
+export const makeEmployeeAdminValidator = [
+  body("isAdmin")
+    .isBoolean()
+    .withMessage("isAdmin must be a boolean value (true or false)")
+    .not()
+    .isEmpty()
+    .withMessage("isAdmin is required"),
+
   handleValidationErrors,
 ];

@@ -1,5 +1,6 @@
 import { body } from "express-validator";
 import { handleValidationErrors } from "../../middlewares/error.js";
+import ApiError from "../../utils/apiError.js";
 
 export const tenantValidator = [
   body("name")
@@ -9,8 +10,6 @@ export const tenantValidator = [
     .withMessage("Tenant name must be a string")
     .notEmpty()
     .withMessage("Tenant name cannot be empty"),
-
-  body("logo").optional().isURL().withMessage("Image must be a valid URL"),
 
   body("color")
     .exists()
@@ -25,6 +24,35 @@ export const tenantValidator = [
     .withMessage("email is required")
     .isEmail()
     .withMessage("Please provide a valid email address"),
+
+  (req, res, next) => {
+    if (!req.files || !req.files.logo) {
+      throw ApiError.badRequest("Please provide a logo");
+    }
+
+    const file = req.files.logo;
+
+    const validFileTypes = ["image/jpeg", "image/png"];
+
+    // Validate file type
+    if (!validFileTypes.includes(file.mimetype)) {
+      throw ApiError.badRequest(
+        `Invalid file type. Allowed types are: ${validFileTypes.join(", ")}`
+      );
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 5 * 1024 * 1024; // 10 MB
+    if (file.size > maxSize) {
+      throw ApiError.badRequest(
+        `File size exceeds the maximum allowed limit of ${
+          maxSize / 1024 / 1024
+        } MB.`
+      );
+    }
+
+    next();
+  },
 
   handleValidationErrors,
 ];

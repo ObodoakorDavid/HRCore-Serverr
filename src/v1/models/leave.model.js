@@ -64,6 +64,37 @@ const leaveHistorySchema = new mongoose.Schema(
       ref: "Employee",
       required: true,
     },
+    leaveType: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "LeaveType",
+      required: true,
+    },
+    startDate: {
+      type: Date,
+      required: true,
+    },
+    resumptionDate: {
+      type: Date,
+      required: true,
+    },
+    duration: {
+      type: Number,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    reason: {
+      type: String,
+    },
+    rejectionReason: {
+      type: String,
+    },
+    approvalReason: {
+      type: String,
+    },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
@@ -74,21 +105,6 @@ const leaveHistorySchema = new mongoose.Schema(
       ref: "Employee",
       default: null,
     },
-    leaveType: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "LeaveType",
-      required: true,
-    },
-    startDate: { type: Date, required: true },
-    resumptionDate: { type: Date, required: true },
-    duration: { type: Number, required: true },
-    description: { type: String },
-    status: {
-      type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "pending",
-    },
-    reason: { type: String },
   },
   { timestamps: true }
 );

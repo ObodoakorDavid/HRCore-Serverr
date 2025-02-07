@@ -81,7 +81,7 @@ router
     isAuth,
     leaveRequestUpdateValidator,
     updateLeaveRequest
-  ) // Update leave request (approve, change dates, etc.)
+  )
   .delete(tenantMiddleware, isAuth, deleteLeaveRequest) // Delete leave request
   .all(methodNotAllowed);
 

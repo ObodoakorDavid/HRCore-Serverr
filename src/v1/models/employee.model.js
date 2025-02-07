@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import Level from "./level.model.js";
+import { EmployeeLeaveBalance } from "./leave.model.js";
 const { Schema } = mongoose;
 
 const employeeSchema = new Schema(
@@ -25,6 +27,11 @@ const employeeSchema = new Schema(
       required: true,
       select: false,
     },
+    avatar: {
+      type: String,
+      default:
+        "https://res.cloudinary.com/demmgc49v/image/upload/v1695969739/default-avatar_scnpps.jpg",
+    },
     jobRole: {
       type: String,
     },
@@ -45,10 +52,9 @@ const employeeSchema = new Schema(
         },
       },
     ],
-    role: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Role",
-      default: null,
+    isOnLeave: {
+      type: Boolean,
+      default: false,
     },
     isAdmin: {
       type: Boolean,
@@ -63,6 +69,11 @@ const employeeSchema = new Schema(
       default: false,
     },
     lineManager: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
+    reliever: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
       default: null,
@@ -89,6 +100,65 @@ const employeeSchema = new Schema(
   },
   { timestamps: true }
 );
+
+// Runs Only when level changes
+employeeSchema.pre("save", async function (next) {
+  if (!this.isModified("levelId") || !this.levelId) return next();
+
+  try {
+    await updateLeaveBalances(this);
+    next();
+  } catch (error) {
+    console.error("Error in pre-save leave balance update:", error);
+    next(error);
+  }
+});
+
+// Runs Only when level changes through findOneAndUpdate
+employeeSchema.pre("findOneAndUpdate", async function (next) {
+  // if (!this.isModified("levelId") || !this.levelId) return next();
+  const update = this.getUpdate();
+  if (!update || !update.levelId) return next();
+
+  try {
+    const employee = await this.model.findOne(this.getQuery());
+
+    if (
+      employee &&
+      employee?.levelId != null &&
+      employee?.levelId?.toString() !== update.levelId.toString()
+    ) {
+      await updateLeaveBalances(employee, update.levelId.toString());
+    }
+    next();
+  } catch (error) {
+    console.error("Error in pre-findOneAndUpdate leave balance update:", error);
+    next(error);
+  }
+});
+
+// Function to update leave balances for an employee
+async function updateLeaveBalances(employee, newLevelId = employee.levelId) {
+  const newLevel = await Level.findById(newLevelId).populate("leaveTypes");
+  if (!newLevel) {
+    throw new Error("Invalid levelId");
+  }
+
+  const newLevelLeaves = newLevel.leaveTypes || [];
+
+  // Remove old balances for the employee
+  await EmployeeLeaveBalance.deleteMany({ employeeId: employee._id });
+
+  // Insert new leave balances
+  const newLeaveBalances = newLevelLeaves.map((leave) => ({
+    tenantId: employee.tenantId,
+    employeeId: employee._id,
+    leaveTypeId: leave._id,
+    balance: leave.defaultBalance,
+  }));
+
+  await EmployeeLeaveBalance.insertMany(newLeaveBalances);
+}
 
 employeeSchema.statics.getEmployeeStats = async function () {
   try {

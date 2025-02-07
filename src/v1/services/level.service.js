@@ -25,8 +25,6 @@ async function addLevel(levelData = {}, tenantId) {
 
   const existingLevel = await Level.findOne({ name, tenantId });
 
-  console.log(existingLevel);
-
   if (existingLevel) {
     throw ApiError.badRequest("A level with this name already exists.");
   }

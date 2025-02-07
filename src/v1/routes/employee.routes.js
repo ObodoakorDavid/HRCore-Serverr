@@ -8,6 +8,7 @@ import {
   employeeProfileUpdateValidator,
   employeeResetPasswordValidator,
   employeeSignUpValidator,
+  makeEmployeeAdminValidator,
 } from "../validators/employee.validator.js";
 import { tenantMiddleware } from "../../middlewares/tenant.middleware.js";
 import {
@@ -17,24 +18,45 @@ import {
   employeeLogin,
   employeeResetPassword,
   employeeSignUp,
+  getAuthEmployee,
   getEmployeeDetails,
   getEmployees,
+  makeEmployeeAdmin,
   sendInviteToEmployee,
+  updateEmployeeByAdmin,
   updateEmployeeProfile,
 } from "../controllers/employee.controller.js";
-import { isAuth, isEmployee, isTenantAdmin } from "../../middlewares/auth.js";
+import {
+  isAdmin,
+  isAuth,
+  isEmployee,
+  isTenantAdmin,
+} from "../../middlewares/auth.js";
+import { validateMongoIdParam } from "../validators/param.validator.js";
 
 const router = express.Router();
 
-router.route("/").get(tenantMiddleware, getEmployees).all(methodNotAllowed);
+router
+  .route("/")
+  .get(tenantMiddleware, isAuth, getEmployees)
+  .all(methodNotAllowed);
 
+//Authentication
 router
   .route("/auth")
-  .get(tenantMiddleware, isAuth, isEmployee, getEmployeeDetails)
+  .get(tenantMiddleware, isAuth, isEmployee, getAuthEmployee)
+  .put(
+    tenantMiddleware,
+    isAuth,
+    isEmployee,
+    employeeProfileUpdateValidator,
+    updateEmployeeProfile
+  )
   .all(methodNotAllowed);
 
 router
-  .route("/auth/profile")
+  .route("/profile/:employeeId")
+  .get(tenantMiddleware, isAuth, getEmployeeDetails)
   .put(
     tenantMiddleware,
     isAuth,
@@ -64,6 +86,7 @@ router
   .post(employeeResetPasswordValidator, employeeResetPassword)
   .all(methodNotAllowed);
 
+//Invites
 router
   .route("/invite")
   .post(
@@ -86,5 +109,31 @@ router
     employeeBulkInvite
   )
   .all(methodNotAllowed);
+
+// Employee Admins
+router
+  .route("/admin/employee/:employeeId")
+  .put(
+    tenantMiddleware,
+    isAuth,
+    isAdmin,
+    employeeProfileUpdateValidator,
+    // makeEmployeeAdminValidator,
+    validateMongoIdParam("employeeId"),
+    updateEmployeeByAdmin
+  )
+  .all(methodNotAllowed);
+
+//Employees
+// router
+//   .route("/admin/employee/:employeeId")
+//   .put(
+//     tenantMiddleware,
+//     validateMongoIdParam("employeeId"),
+//     isAuth,
+//     isAdmin,
+//     updateEmployeeByAdmin
+//   )
+//   .all(methodNotAllowed);
 
 export default router;

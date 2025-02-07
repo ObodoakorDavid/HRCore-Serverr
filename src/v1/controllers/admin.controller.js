@@ -35,7 +35,7 @@ export const adminResetPassword = asyncWrapper(async (req, res, next) => {
 
 export const addTenant = asyncWrapper(async (req, res, next) => {
   const tenantData = req.body;
-  const result = await tenantService.addTenant(tenantData);
+  const result = await tenantService.addTenant(tenantData, req.files);
   res.status(201).json(result);
 });
 
@@ -53,7 +53,5 @@ export const getTenant = asyncWrapper(async (req, res, next) => {
 export const addEmployeeToTenant = asyncWrapper(async (req, res, next) => {
   const employeeData = req.body;
   const result = await employeeService.addEmployeeToTenant(employeeData);
-  console.log(result);
-
   res.status(201).json(result);
 });

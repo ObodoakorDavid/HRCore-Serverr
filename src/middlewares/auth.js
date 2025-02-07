@@ -9,8 +9,8 @@ const isAuth = asyncWrapper(async (req, res, next) => {
   }
   const token = authHeader.split(" ")[1];
   const payload = verifyToken(token);
-
-  if (!req?.user?.roles?.includes("admin")) {
+  
+  if (!payload?.roles?.includes("admin")) {
     req.admin = payload;
   }
 
@@ -26,7 +26,7 @@ const isAuth = asyncWrapper(async (req, res, next) => {
   next();
 });
 
-//Checks if the user is an admin
+//Checks if the user/employee is an admin
 const isAdmin = asyncWrapper(async (req, res, next) => {
   if (!req?.admin) {
     throw ApiError.unauthorized("Admins Only");
@@ -34,7 +34,7 @@ const isAdmin = asyncWrapper(async (req, res, next) => {
   next();
 });
 
-//Checks if the user is an employee
+//Checks if the user/employee is an employee
 const isEmployee = asyncWrapper(async (req, res, next) => {
   if (!req?.employee) {
     throw ApiError.unauthorized("Employees Only");
