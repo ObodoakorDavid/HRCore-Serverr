@@ -50,11 +50,14 @@ async function adminLogin(userData = {}) {
     throw ApiError.forbidden("Email Not Verified");
   }
 
+  console.log({ roles: user.roles });
+
   user.password = undefined;
 
   const token = generateToken({
     userId: user._id,
     roles: user.roles,
+    isSuperAdmin: true,
   });
 
   return ApiSuccess.ok("Login Successful", {

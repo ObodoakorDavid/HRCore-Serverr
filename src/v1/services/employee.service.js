@@ -33,6 +33,7 @@ async function signIn(employeeData = {}) {
   const token = generateToken({
     employeeId: employee._id,
     isAdmin: employee.isAdmin,
+    isEmployee: true,
     roles: employee.isAdmin ? ["admin", "employee"] : ["employee"],
   });
 
@@ -157,7 +158,7 @@ async function getEmployeeDetails(employeeId, tenantId) {
     { path: "tenantId" },
     {
       path: "lineManager",
-      select: "name email",
+      select: "name email isOnLeave",
     },
     {
       path: "levelId",
@@ -165,7 +166,7 @@ async function getEmployeeDetails(employeeId, tenantId) {
     },
     {
       path: "reliever",
-      select: "name",
+      select: "name email isOnLeave",
     },
   ]);
 
@@ -338,7 +339,16 @@ async function updateProfile(employeeId, tenantId, profileData = {}, files) {
     },
     updatePayload,
     { new: true, runValidators: true }
-  );
+  ).populate([
+    {
+      path: "lineManager",
+      select: "name",
+    },
+    {
+      path: "reliever",
+      select: "name",
+    },
+  ]);
 
   if (!employee) {
     throw ApiError.badRequest("No user with this email or tenant");

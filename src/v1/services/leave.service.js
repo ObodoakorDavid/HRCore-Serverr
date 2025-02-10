@@ -44,29 +44,69 @@ async function requestLeave(leaveData = {}, employeeId, tenantId) {
 
   leaveBalance.balance = leaveBalance.balance - duration;
 
-  const employee = await Employee.findById(employeeId).populate(
-    "tenantId lineManager"
-  );
+  const employee = await Employee.findById(employeeId).populate([
+    {
+      path: "tenantId",
+    },
+    {
+      path: "lineManager",
+      select: ["name", "isOnLeave", "reliever"],
+      populate: {
+        path: "reliever",
+        select: ["name", "isOnLeave"],
+      },
+    },
+    {
+      path: "reliever",
+      select: ["name", "isOnLeave"],
+    },
+  ]);
 
   if (!employee.lineManager) {
     throw ApiError.badRequest("Please update your line manager");
+  }
+
+  if (!employee.reliever) {
+    throw ApiError.badRequest("Please update your reliever");
   }
 
   if (employee.isOnLeave) {
     throw ApiError.badRequest("You are already on leave");
   }
 
+  if (employee?.reliever?.isOnLeave) {
+    throw ApiError.badRequest("Your reliever is on leave");
+  }
+
+  if (
+    employee?.lineManager?.isOnLeave &&
+    employee?.lineManager?.reliever?.isOnLeave
+  ) {
+    throw ApiError.badRequest(
+      "Your line manager and thier reliever is currently on leave"
+    );
+  }
+
+  let lineManagerId = "";
+
+  // console.log(employee);
+
+  if (employee?.lineManager?.isOnLeave) {
+    lineManagerId = employee.reliever._id;
+  } else {
+    lineManagerId = employee.lineManager._id;
+  }
+
   // Create leave request
   const leaveRequest = new LeaveHistory({
     tenantId,
     employee: employeeId,
-    lineManager: employee.lineManager._id,
+    lineManager: lineManagerId,
     leaveType: leaveTypeId,
     startDate,
     resumptionDate,
     duration,
     reason,
-    tenantId,
     status: "pending",
   });
 
@@ -74,9 +114,19 @@ async function requestLeave(leaveData = {}, employeeId, tenantId) {
 
   await leaveRequest.save();
   await leaveBalance.save();
+  await leaveRequest.populate([
+    {
+      path: "lineManager",
+      select: ["name", "email"],
+    },
+  ]);
+
+  console.log(leaveRequest);
 
   // Send mail to the line manager
   const emailObject = createEmailObject(leaveRequest, employee);
+
+  console.log(emailObject);
 
   try {
     await emailUtils.sendLeaveRequestEmail(emailObject);
@@ -488,7 +538,7 @@ async function getLeaveBalance(employeeId, tenantId) {
 
 function createEmailObject(leaveRequest, employee) {
   return {
-    email: employee.lineManager?.email,
+    email: leaveRequest.lineManager?.email,
     tenantName: employee.tenantId?.name,
     color: employee.tenantId?.color,
     logo: employee.tenantId?.logo,

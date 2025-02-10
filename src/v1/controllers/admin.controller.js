@@ -12,25 +12,25 @@ export const adminRegister = asyncWrapper(async (req, res, next) => {
 export const adminLogin = asyncWrapper(async (req, res, next) => {
   const userData = req.body;
   const result = await adminService.adminLogin(userData);
-  res.status(201).json(result);
+  res.status(200).json(result);
 });
 
 export const getAdmin = asyncWrapper(async (req, res, next) => {
-  const { userId } = req.admin;
+  const { userId } = req.user;
   const result = await adminService.getAdmin(userId);
-  res.status(201).json(result);
+  res.status(200).json(result);
 });
 
 export const adminForgotPassword = asyncWrapper(async (req, res, next) => {
   const userData = req.body;
   const result = await adminService.adminForgotPassword(userData);
-  res.status(201).json(result);
+  res.status(200).json(result);
 });
 
 export const adminResetPassword = asyncWrapper(async (req, res, next) => {
   const userData = req.body;
   const result = await adminService.adminResetPassword(userData);
-  res.status(201).json(result);
+  res.status(200).json(result);
 });
 
 export const addTenant = asyncWrapper(async (req, res, next) => {

@@ -9,16 +9,20 @@ const isAuth = asyncWrapper(async (req, res, next) => {
   }
   const token = authHeader.split(" ")[1];
   const payload = verifyToken(token);
-  
-  if (!payload?.roles?.includes("admin")) {
-    req.admin = payload;
+
+  if (payload?.isSuperAdmin) {
+    req.superAdmin = payload;
   }
 
-  if (!req?.user?.roles?.includes("tenant")) {
+  if (payload?.isTenantAdmin) {
     req.tenantAdmin = payload;
   }
 
-  if (!req?.user?.roles?.includes("employee")) {
+  if (payload?.isAdmin) {
+    req.admin = payload;
+  }
+
+  if (payload?.isEmployee) {
     req.employee = payload;
   }
   //Holds whichever user is logged in
@@ -27,36 +31,49 @@ const isAuth = asyncWrapper(async (req, res, next) => {
 });
 
 //Checks if the user/employee is an admin
+const isSuperAdmin = asyncWrapper(async (req, res, next) => {
+  if (!req?.user.isSuperAdmin) {
+    throw ApiError.unauthorized("Super Admins Only");
+  }
+  next();
+});
+
+//Checks if the user/employee is an admin
 const isAdmin = asyncWrapper(async (req, res, next) => {
-  if (!req?.admin) {
-    throw ApiError.unauthorized("Admins Only");
+  if (!req?.user.isAdmin) {
+    throw ApiError.unauthorized("Employee Admins Only");
   }
   next();
 });
 
 //Checks if the user/employee is an employee
 const isEmployee = asyncWrapper(async (req, res, next) => {
-  if (!req?.employee) {
+  if (!req?.user?.isEmployee) {
     throw ApiError.unauthorized("Employees Only");
   }
-
   next();
 });
 
 //Checks if the user is a tenantAdmin
 const isTenantAdmin = asyncWrapper(async (req, res, next) => {
-  if (!req?.tenantAdmin) {
+  if (!req?.user?.isTenantAdmin) {
     throw ApiError.unauthorized("Tenant Admins Only");
   }
   next();
 });
 
 const isTenantAdminOrAdmin = asyncWrapper(async (req, res, next) => {
-  if (!req?.tenantAdmin || !req?.admin) {
+  if (!req?.user?.isTenantAdmin || !req?.user?.isAdmin) {
     throw ApiError.unauthorized("Tenant Admins and Admins Only");
   }
-
   next();
 });
 
-export { isAuth, isAdmin, isTenantAdmin, isEmployee, isTenantAdminOrAdmin };
+export {
+  isAuth,
+  isSuperAdmin,
+  isAdmin,
+  isTenantAdmin,
+  isEmployee,
+  isTenantAdminOrAdmin,
+};

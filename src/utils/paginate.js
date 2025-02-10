@@ -29,16 +29,18 @@ export const paginate = async ({
 
   const documents = await queryBuilder;
 
-  const totalCount = await model.countDocuments(query);
-  const totalPages = Math.ceil(totalCount / limit);
+  const totalCount = await model.countDocuments();
+  const filteredCount = await model.countDocuments(query);
+  const totalPages = Math.ceil(filteredCount / limit);
 
   return {
     documents,
     pagination: {
       totalCount,
+      filteredCount,
       totalPages,
-      currentPage: page,
-      perPage: limit,
+      page,
+      limit,
     },
   };
 };

@@ -16,7 +16,7 @@ async function getTenantByID(tenantId) {
   }
   const tenant = await Tenant.findById(tenantId);
   if (!tenant) {
-    throw ApiError.badRequest("No tenant with the tenantId provided");
+    throw ApiError.badRequest("No client with the client ID provided");
   }
   return tenant;
 }
@@ -28,7 +28,6 @@ async function addTenant(tenantData = {}, files = {}) {
   // Check if a tenant with the same name already exists
   const existingTenant = await Tenant.findOne({ name });
   if (existingTenant) {
-    2;
     throw ApiError.badRequest("A client with this name already exists.");
   }
 
@@ -61,9 +60,9 @@ async function addTenant(tenantData = {}, files = {}) {
   }
 
   if (!emailInfo) {
-    message = `Tenant added successfully but email not delivered`;
+    message = `Client added successfully but email not delivered`;
   } else {
-    message = `Tenant added successfully, credentials sent to ${emailInfo.envelope.to}`;
+    message = `Client added successfully, credentials sent to ${emailInfo.envelope.to}`;
   }
 
   return ApiSuccess.created(message);
@@ -71,7 +70,7 @@ async function addTenant(tenantData = {}, files = {}) {
 
 async function getTenants(query = {}) {
   const tenants = await Tenant.find({});
-  return ApiSuccess.created("Tenants retrieved successfully", { tenants });
+  return ApiSuccess.created("Client retrieved successfully", { tenants });
 }
 
 async function getTenant(tenantId) {
@@ -91,7 +90,7 @@ async function tenantLogin(tenantData) {
 
   const token = generateToken({
     tenantId: tenant._id,
-    isAdmin: true,
+    isTenantAdmin: true,
     roles: ["tenant"],
   });
 

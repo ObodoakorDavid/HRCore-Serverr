@@ -1,7 +1,6 @@
 import express from "express";
 import methodNotAllowed from "../../middlewares/methodNotAllowed.js";
 import {
-  addEmployeeToTenant,
   addTenant,
   adminForgotPassword,
   adminLogin,
@@ -11,9 +10,8 @@ import {
   getTenant,
   getTenants,
 } from "../controllers/admin.controller.js";
-import { isAdmin, isAuth } from "../../middlewares/auth.js";
+import { isAuth, isSuperAdmin } from "../../middlewares/auth.js";
 import { tenantValidator } from "../validators/tenant.validator.js";
-import { employeeSignUpValidator } from "../validators/employee.validator.js";
 import {
   adminForgotPasswordValidator,
   adminLogInValidator,
@@ -33,7 +31,7 @@ router
   .post(adminLogInValidator, adminLogin)
   .all(methodNotAllowed);
 
-router.route("/auth").get(isAuth, isAdmin, getAdmin).all(methodNotAllowed);
+router.route("/auth").get(isAuth, isSuperAdmin, getAdmin).all(methodNotAllowed);
 
 router
   .route("/auth/forgot-password")
@@ -52,13 +50,13 @@ router
 
 router
   .route("/tenant")
-  .post(isAuth, isAdmin, tenantValidator, addTenant)
-  .get(isAuth, isAdmin, getTenants)
+  .post(isAuth, isSuperAdmin, tenantValidator, addTenant)
+  .get(isAuth, isSuperAdmin, getTenants)
   .all(methodNotAllowed);
 
 router
   .route("/tenant/:tenantId")
-  .get(isAuth, isAdmin, getTenant)
+  .get(isAuth, isSuperAdmin, getTenant)
   .all(methodNotAllowed);
 
 // router
