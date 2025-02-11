@@ -106,11 +106,12 @@ export const updateEmployeeByAdmin = asyncWrapper(async (req, res, next) => {
   const { tenantId } = req.tenant;
   const { employeeId } = req.params;
   const profileData = req.body;
+  const files = req.files || {};
   const result = await employeeService.updateProfile(
     employeeId,
     tenantId,
     profileData,
-    req?.files?.file ? req.files?.file : null
+    files
   );
   res.status(200).json(result);
 });

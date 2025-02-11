@@ -16,6 +16,8 @@ import {
   tenantResetPasswordValidator,
 } from "../validators/tenant.validator.js";
 import { isAuth, isTenantAdmin } from "../../middlewares/auth.js";
+import { employeeProfileUpdateValidator } from "../validators/employee.validator.js";
+import { getEmployees, updateEmployeeByAdmin } from "../controllers/employee.controller.js";
 
 const router = express.Router();
 
@@ -43,6 +45,25 @@ router
 router
   .route("/link")
   .get(tenantMiddleware, isAuth, isTenantAdmin, getAllInviteLinks)
+  .all(methodNotAllowed);
+
+// Employees
+router
+  .route("/employee")
+  .get(tenantMiddleware, isAuth, isTenantAdmin, getEmployees)
+  .all(methodNotAllowed);
+
+router
+  .route("/employee/:employeeId")
+  .put(
+    tenantMiddleware,
+    isAuth,
+    isTenantAdmin,
+    employeeProfileUpdateValidator,
+    // makeEmployeeAdminValidator,
+    validateMongoIdParam("employeeId"),
+    updateEmployeeByAdmin
+  )
   .all(methodNotAllowed);
 
 //Public

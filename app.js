@@ -44,7 +44,7 @@ app.use("/api/v1/tenant", tenantRoutesV1);
 app.use("/api/v1/roles", rolesRoutesV1);
 app.use("/api/v1/leave", leaveRoutesV1);
 app.use("/api/v1/level", levelRoutesV1);
-app.use("/api/v1/super-admin", superAdminRoutesV1);
+// app.use("/api/v1/super-admin", superAdminRoutesV1);
 
 app.use(notFound);
 app.use(errorMiddleware);

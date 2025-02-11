@@ -426,6 +426,8 @@ async function updateLeaveType(leaveTypeId, leaveTypeData, tenantId) {
     throw ApiError.badRequest("LeaveTypeId not provided.");
   }
 
+  
+
   // Update the leave type
   const leaveType = await LeaveType.findOneAndUpdate(
     { _id: leaveTypeId, tenantId },
