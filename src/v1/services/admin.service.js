@@ -43,15 +43,18 @@ async function adminRegister(userData = {}) {
 
 async function adminLogin(userData = {}) {
   const { email, password } = userData;
+
   const user = await User.findOne({ email: email }).select("+password");
+  if (!user) {
+    throw ApiError.notFound("User with this email does not exist");
+  }
+
   await validatePassword(password, user.password);
 
   if (!user.isEmailVerified) {
     throw ApiError.forbidden("Email Not Verified");
   }
-
-  console.log({ roles: user.roles });
-
+  
   user.password = undefined;
 
   const token = generateToken({
