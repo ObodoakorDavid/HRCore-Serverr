@@ -39,9 +39,15 @@ async function signIn(employeeData = {}) {
 
   employee.password = undefined;
 
+  const employeeId = String(employee._id);
+  const tenantId = String(employee.tenantId);
+
+  const leaveBalances = await employee.getLeaveBalances(employeeId, tenantId);
+
   return ApiSuccess.created("Login successfull", {
     employee,
     token,
+    leaveBalances: leaveBalances.length > 0 ? leaveBalances : [],
   });
 }
 
@@ -150,7 +156,7 @@ async function acceptInvite(token, tenantId) {
   });
 }
 
-async function getEmployeeDetails(employeeId, tenantId) {
+async function getEmployee(employeeId, tenantId) {
   const employee = await Employee.findOne({
     _id: employeeId,
     tenantId,
@@ -174,8 +180,14 @@ async function getEmployeeDetails(employeeId, tenantId) {
     throw ApiError.notFound("Employee not found");
   }
 
+  const leaveBalances = await employee.getLeaveBalances(
+    String(employeeId),
+    String(tenantId)
+  );
+
   return ApiSuccess.created("Employee Retrived Successfully  ", {
     employee,
+    leaveBalances: leaveBalances.length > 0 ? leaveBalances : [],
   });
 }
 
@@ -301,7 +313,7 @@ async function employeeBulkInvite(file, tenantId) {
 }
 
 // Update Profile
-async function updateProfile(employeeId, tenantId, profileData = {}, files) {
+async function updateEmployee(employeeId, tenantId, profileData = {}, files) {
   const { file, avatar } = files;
 
   let fileData = null;
@@ -347,6 +359,9 @@ async function updateProfile(employeeId, tenantId, profileData = {}, files) {
     {
       path: "reliever",
       select: "name",
+    },
+    {
+      path: "tenantId",
     },
   ]);
 
@@ -426,43 +441,15 @@ async function resetPassword(token, newPassword) {
   return ApiSuccess.ok("Password has been reset successfully");
 }
 
-async function makeEmployeeAdmin(employeeId, tenantId, { isAdmin } = {}) {
-  if (typeof isAdmin !== "boolean") {
-    throw ApiError.badRequest("isAdmin must be a boolean value");
-  }
-
-  const employee = await Employee.findOneAndUpdate(
-    {
-      _id: employeeId,
-      tenantId,
-    },
-    { isAdmin },
-    {
-      runValidators: true,
-      new: true,
-    }
-  );
-
-  if (!employee) {
-    throw ApiError.notFound("Employee not found");
-  }
-
-  const message = isAdmin
-    ? "Employee granted admin rights"
-    : "Employee admin rights revoked";
-
-  return ApiSuccess.ok(message, { employee });
-}
-
 export default {
+  getEmployee,
+  updateEmployee,
+  getEmployees,
   signIn,
   forgotPassword,
   resetPassword,
   sendInviteToEmployee,
-  getEmployeeDetails,
   acceptInvite,
-  getEmployees,
   employeeBulkInvite,
-  updateProfile,
-  makeEmployeeAdmin,
+  // makeEmployeeAdmin,
 };

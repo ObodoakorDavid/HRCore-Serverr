@@ -57,6 +57,55 @@ export const tenantValidator = [
   handleValidationErrors,
 ];
 
+export const tenantUpdateValidator = [
+  body("name")
+    .optional()
+    .isString()
+    .withMessage("Tenant name must be a string")
+    .notEmpty()
+    .withMessage("Tenant name cannot be empty"),
+
+  body("color")
+    .optional()
+    .isString()
+    .withMessage("Color must be a string")
+    .matches(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
+    .withMessage("Color must be a valid hex code (e.g., #FFF or #FFFFFF)"),
+
+  (req, res, next) => {
+    if (!req.files || !req.files.logo) {
+      console.log("hhhhhhhhhhhhhhhh");
+
+      return next();
+    }
+
+    const { logo } = req.files;
+
+    const validFileTypes = ["image/jpeg", "image/png"];
+
+    // Validate file type
+    if (!validFileTypes.includes(logo.mimetype)) {
+      throw ApiError.badRequest(
+        `Invalid file type. Allowed types are: ${validFileTypes.join(", ")}`
+      );
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 5 * 1024 * 1024; // 10 MB
+    if (logo.size > maxSize) {
+      throw ApiError.badRequest(
+        `File size exceeds the maximum allowed limit of ${
+          maxSize / 1024 / 1024
+        } MB.`
+      );
+    }
+
+    next();
+  },
+
+  handleValidationErrors,
+];
+
 export const tenantLoginValidator = [
   body("email")
     .exists()

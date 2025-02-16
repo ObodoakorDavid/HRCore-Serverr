@@ -7,6 +7,7 @@ import {
   tenantForgotPassword,
   tenantLogin,
   tenantResetPassword,
+  updateTenantProfile,
 } from "../controllers/tenant.controller.js";
 import { validateMongoIdParam } from "../validators/param.validator.js";
 import { tenantMiddleware } from "../../middlewares/tenant.middleware.js";
@@ -14,10 +15,15 @@ import {
   tenantForgotPasswordValidator,
   tenantLoginValidator,
   tenantResetPasswordValidator,
+  tenantUpdateValidator,
 } from "../validators/tenant.validator.js";
 import { isAuth, isTenantAdmin } from "../../middlewares/auth.js";
 import { employeeProfileUpdateValidator } from "../validators/employee.validator.js";
-import { getEmployees, updateEmployeeByAdmin } from "../controllers/employee.controller.js";
+import {
+  getEmployee,
+  getEmployees,
+  updateEmployee,
+} from "../controllers/employee.controller.js";
 
 const router = express.Router();
 
@@ -25,6 +31,13 @@ const router = express.Router();
 router
   .route("/auth")
   .get(tenantMiddleware, isAuth, isTenantAdmin, getTenantDetails)
+  .put(
+    tenantMiddleware,
+    isAuth,
+    isTenantAdmin,
+    tenantUpdateValidator,
+    updateTenantProfile
+  )
   .all(methodNotAllowed);
 
 router
@@ -55,14 +68,20 @@ router
 
 router
   .route("/employee/:employeeId")
+  .get(
+    tenantMiddleware,
+    isAuth,
+    isTenantAdmin,
+    validateMongoIdParam("employeeId"),
+    getEmployee
+  )
   .put(
     tenantMiddleware,
     isAuth,
     isTenantAdmin,
     employeeProfileUpdateValidator,
-    // makeEmployeeAdminValidator,
     validateMongoIdParam("employeeId"),
-    updateEmployeeByAdmin
+    updateEmployee
   )
   .all(methodNotAllowed);
 

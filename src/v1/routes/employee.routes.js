@@ -8,7 +8,6 @@ import {
   employeeProfileUpdateValidator,
   employeeResetPasswordValidator,
   employeeSignUpValidator,
-  makeEmployeeAdminValidator,
 } from "../validators/employee.validator.js";
 import { tenantMiddleware } from "../../middlewares/tenant.middleware.js";
 import {
@@ -19,12 +18,10 @@ import {
   employeeResetPassword,
   employeeSignUp,
   getAuthEmployee,
-  getEmployeeDetails,
   getEmployees,
-  makeEmployeeAdmin,
   sendInviteToEmployee,
-  updateEmployeeByAdmin,
-  updateEmployeeProfile,
+  updateAuthEmployee,
+  updateEmployee,
 } from "../controllers/employee.controller.js";
 import {
   isAdmin,
@@ -50,19 +47,7 @@ router
     isAuth,
     isEmployee,
     employeeProfileUpdateValidator,
-    updateEmployeeProfile
-  )
-  .all(methodNotAllowed);
-
-router
-  .route("/profile/:employeeId")
-  .get(tenantMiddleware, isAuth, getEmployeeDetails)
-  .put(
-    tenantMiddleware,
-    isAuth,
-    isEmployee,
-    employeeProfileUpdateValidator,
-    updateEmployeeProfile
+    updateAuthEmployee
   )
   .all(methodNotAllowed);
 
@@ -120,20 +105,8 @@ router
     employeeProfileUpdateValidator,
     // makeEmployeeAdminValidator,
     validateMongoIdParam("employeeId"),
-    updateEmployeeByAdmin
+    updateEmployee
   )
   .all(methodNotAllowed);
-
-//Employees
-// router
-//   .route("/admin/employee/:employeeId")
-//   .put(
-//     tenantMiddleware,
-//     validateMongoIdParam("employeeId"),
-//     isAuth,
-//     isAdmin,
-//     updateEmployeeByAdmin
-//   )
-//   .all(methodNotAllowed);
 
 export default router;

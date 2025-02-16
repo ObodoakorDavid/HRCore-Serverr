@@ -4,7 +4,6 @@ import morgan from "morgan";
 import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
-
 import connectDB from "./src/config/connectDB.js";
 import notFound from "./src/middlewares/notFound.js";
 import { errorMiddleware } from "./src/middlewares/error.js";
@@ -12,10 +11,10 @@ import { errorMiddleware } from "./src/middlewares/error.js";
 import adminRoutesV1 from "./src/v1/routes/admin.routes.js";
 import employeeRoutesV1 from "./src/v1/routes/employee.routes.js";
 import tenantRoutesV1 from "./src/v1/routes/tenant.routes.js";
-import rolesRoutesV1 from "./src/v1/routes/role.routes.js";
 import leaveRoutesV1 from "./src/v1/routes/leave.routes.js";
 import levelRoutesV1 from "./src/v1/routes/level.routes.js";
-import superAdminRoutesV1 from "./src/v1/routes/superAdmin.routes.js";
+import analyticsRoutesV1 from "./src/v1/routes/analytics.routes.js";
+// import superAdminRoutesV1 from "./src/v1/routes/superAdmin.routes.js";
 
 //
 import authRoutesV1 from "./src/v1/routes/auth.routes.js";
@@ -41,9 +40,9 @@ app.use("/api/v1/auth", authRoutesV1);
 //Rest
 app.use("/api/v1/employee", employeeRoutesV1);
 app.use("/api/v1/tenant", tenantRoutesV1);
-app.use("/api/v1/roles", rolesRoutesV1);
 app.use("/api/v1/leave", leaveRoutesV1);
 app.use("/api/v1/level", levelRoutesV1);
+app.use("/api/v1/analytics", analyticsRoutesV1);
 // app.use("/api/v1/super-admin", superAdminRoutesV1);
 
 app.use(notFound);

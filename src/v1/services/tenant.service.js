@@ -78,6 +78,41 @@ async function getTenant(tenantId) {
   return ApiSuccess.created("Client retrieved successfully", { tenant });
 }
 
+// Update Tenant Profile
+async function updateTenantProfile(tenantId, profileData = {}, files = {}) {
+  const { logo } = files;
+
+  console.log({ profileData });
+
+  let logoURL;
+
+  if (logo) {
+    const imgUrl = await uploadToCloudinary(logo.tempFilePath);
+    logoURL = imgUrl;
+  }
+
+  const updatePayload = { ...profileData };
+  updatePayload.logo = logoURL;
+
+  console.log({ updatePayload });
+
+  const tenant = await Tenant.findOneAndUpdate(
+    {
+      _id: tenantId,
+    },
+    updatePayload,
+    { new: true, runValidators: true }
+  );
+
+  if (!tenant) {
+    throw ApiError.badRequest("No user with this email or tenant");
+  }
+
+  return ApiSuccess.ok("Profile Updated Successfully", {
+    tenant,
+  });
+}
+
 async function tenantLogin(tenantData) {
   const { email, password } = tenantData;
   const tenant = await Tenant.findOne({ email }).select("+password");
@@ -200,6 +235,7 @@ export default {
   getTenants,
   getTenant,
   tenantLogin,
+  updateTenantProfile,
   forgotPassword,
   resetPassword,
   getLinks,

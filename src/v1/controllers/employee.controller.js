@@ -42,22 +42,35 @@ export const getEmployees = asyncWrapper(async (req, res, next) => {
 export const getAuthEmployee = asyncWrapper(async (req, res, next) => {
   const { tenantId } = req.tenant;
   const { employeeId } = req.employee;
-  const result = await employeeService.getEmployeeDetails(employeeId, tenantId);
+  const result = await employeeService.getEmployee(employeeId, tenantId);
   res.status(201).json(result);
 });
 
-export const getEmployeeDetails = asyncWrapper(async (req, res, next) => {
-  const { tenantId } = req.tenant;
-  const { employeeId } = req.params;
-  const result = await employeeService.getEmployeeDetails(employeeId, tenantId);
-  res.status(201).json(result);
-});
-
-export const updateEmployeeProfile = asyncWrapper(async (req, res, next) => {
+export const updateAuthEmployee = asyncWrapper(async (req, res, next) => {
   const { tenantId } = req.tenant;
   const { employeeId } = req.employee;
+  const { isAdmin, ...profileData } = req.body;
+  const result = await employeeService.updateEmployee(
+    employeeId,
+    tenantId,
+    profileData,
+    req?.files ? req.files : {}
+  );
+  res.status(200).json(result);
+});
+
+export const getEmployee = asyncWrapper(async (req, res, next) => {
+  const { tenantId } = req.tenant;
+  const { employeeId } = req.params;
+  const result = await employeeService.getEmployee(employeeId, tenantId);
+  res.status(201).json(result);
+});
+
+export const updateEmployee = asyncWrapper(async (req, res, next) => {
+  const { tenantId } = req.tenant;
+  const { employeeId } = req.params;
   const profileData = req.body;
-  const result = await employeeService.updateProfile(
+  const result = await employeeService.updateEmployee(
     employeeId,
     tenantId,
     profileData,
@@ -92,29 +105,6 @@ export const employeeBulkInvite = asyncWrapper(async (req, res, next) => {
 });
 
 //Admins
-export const makeEmployeeAdmin = asyncWrapper(async (req, res, next) => {
-  const { tenantId } = req.tenant;
-  const { employeeId } = req.params;
-  const { isAdmin } = req.body;
-  const result = await employeeService.makeEmployeeAdmin(employeeId, tenantId, {
-    isAdmin,
-  });
-  res.status(201).json(result);
-});
-
-export const updateEmployeeByAdmin = asyncWrapper(async (req, res, next) => {
-  const { tenantId } = req.tenant;
-  const { employeeId } = req.params;
-  const profileData = req.body;
-  const files = req.files || {};
-  const result = await employeeService.updateProfile(
-    employeeId,
-    tenantId,
-    profileData,
-    files
-  );
-  res.status(200).json(result);
-});
 
 export default {
   employeeForgotPassword,

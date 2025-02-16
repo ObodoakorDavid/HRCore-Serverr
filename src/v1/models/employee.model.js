@@ -84,23 +84,50 @@ const employeeSchema = new Schema(
       ref: "Level",
       default: null,
     },
-    leaveBalances: [
-      {
-        leaveType: {
-          type: String,
-          required: true,
-        },
-        balance: {
-          type: Number,
-          required: true,
-          default: 0, // Default balance for new employees
-          min: 0, // Prevent negative leave balances
-        },
-      },
-    ],
   },
   { timestamps: true }
 );
+
+employeeSchema.methods.getLeaveBalances = async function (
+  employeeId,
+  tenantId
+) {
+  try {
+    return EmployeeLeaveBalance.aggregate([
+      {
+        $match: {
+          employeeId: mongoose.Types.ObjectId.createFromHexString(employeeId),
+          tenantId: mongoose.Types.ObjectId.createFromHexString(tenantId),
+        },
+      },
+      {
+        $lookup: {
+          from: "leavetypes",
+          localField: "leaveTypeId",
+          foreignField: "_id",
+          as: "leaveTypeDetails",
+        },
+      },
+      {
+        $unwind: {
+          path: "$leaveTypeDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          leaveTypeId: 1,
+          balance: 1,
+          "leaveTypeDetails.name": 1,
+          "leaveTypeDetails.defaultBalance": 1,
+        },
+      },
+    ]);
+  } catch (error) {
+    throw error;
+  }
+};
 
 // Runs Only when level changes
 employeeSchema.pre("save", async function (next) {

@@ -7,6 +7,17 @@ export const tenantLogin = asyncWrapper(async (req, res, next) => {
   res.status(200).json(result);
 });
 
+export const updateTenantProfile = asyncWrapper(async (req, res, next) => {
+  const tenantData = req.body;
+  const { tenantId } = req.tenantAdmin;
+  const result = await tenantService.updateTenantProfile(
+    tenantId,
+    tenantData,
+    req?.files ? req.files : {}
+  );
+  res.status(200).json(result);
+});
+
 export const tenantForgotPassword = asyncWrapper(async (req, res, next) => {
   const { email } = req.body;
   const result = await tenantService.forgotPassword(email);
