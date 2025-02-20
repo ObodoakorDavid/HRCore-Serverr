@@ -365,12 +365,18 @@ async function updateEmployee(employeeId, tenantId, profileData = {}, files) {
     },
   ]);
 
+  const leaveBalances = await employee.getLeaveBalances(
+    String(employeeId),
+    String(tenantId)
+  );
+
   if (!employee) {
     throw ApiError.badRequest("No user with this email or tenant");
   }
 
   return ApiSuccess.ok("Profile Updated Successfully", {
     employee,
+    leaveBalances: leaveBalances.length > 0 ? leaveBalances : [],
   });
 }
 

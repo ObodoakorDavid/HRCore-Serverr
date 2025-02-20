@@ -53,7 +53,7 @@ async function addTenant(tenantData = {}, files = {}) {
       tenantId: tenant._id,
       email,
       plainPassword,
-      loginUrl: `${process.env.FRONTEND_URL}/tenant/login`,
+      loginUrl: `${process.env.FRONTEND_URL}/client/login`,
     });
   } catch {
     console.log("There was an error sending an email");
