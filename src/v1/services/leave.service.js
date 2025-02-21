@@ -180,11 +180,11 @@ async function getLeaveRequests(query = {}, tenantId) {
   const populateOptions = [
     {
       path: "employee",
-      select: "name",
+      select: "name email",
     },
     {
       path: "lineManager",
-      select: "name",
+      select: "name email",
     },
   ];
 
@@ -212,7 +212,7 @@ async function getSingleLeaveRequest(leaveId, tenantId) {
   const populateOptions = [
     {
       path: "employee",
-      select: "name",
+      select: "name email",
     },
     {
       path: "leaveType",
@@ -220,7 +220,7 @@ async function getSingleLeaveRequest(leaveId, tenantId) {
     },
     {
       path: "lineManager",
-      select: "name",
+      select: "name email",
     },
   ];
 
@@ -425,8 +425,6 @@ async function updateLeaveType(leaveTypeId, leaveTypeData, tenantId) {
   if (!leaveTypeId) {
     throw ApiError.badRequest("LeaveTypeId not provided.");
   }
-
-  
 
   // Update the leave type
   const leaveType = await LeaveType.findOneAndUpdate(
